@@ -1,0 +1,2644 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorkMap</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb454' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --bg2: #0e131c;
+      --card: #121a26;
+      --card2: #15202f;
+      --line: #1f2b3d;
+      --txt: #e8eef7;
+      --muted: #7d8da3;
+      --amber: #ffb454;
+      --amber-soft: rgba(255, 180, 84, 0.12);
+      --teal: #3dd7c4;
+      --teal-soft: rgba(61, 215, 196, 0.12);
+      --violet: #9b8cff;
+      --violet-soft: rgba(155, 140, 255, 0.12);
+      --rose: #ff7a8a;
+      --rose-soft: rgba(255, 122, 138, 0.12);
+      --grid: rgba(125, 141, 163, 0.08);
+      --bg-input: rgba(10, 14, 20, 0.6);
+      --clock-filter: invert(1) brightness(1.2);
+      --hover-row: rgba(255, 255, 255, 0.015);
+    }
+    
+    [data-theme="light"] {
+      --bg: #f3f6fa;
+      --bg2: #e9eff6;
+      --card: #ffffff;
+      --card2: #f8fafc;
+      --line: #cbd5e1;
+      --txt: #0f172a;
+      --muted: #475569;
+      --amber: #b45309;
+      --amber-soft: rgba(180, 83, 9, 0.08);
+      --teal: #0f766e;
+      --teal-soft: rgba(15, 118, 110, 0.08);
+      --violet: #5b21b6;
+      --violet-soft: rgba(91, 33, 182, 0.08);
+      --rose: #be123c;
+      --rose-soft: rgba(190, 18, 60, 0.08);
+      --grid: rgba(71, 85, 105, 0.08);
+      --bg-input: #f8fafc;
+      --clock-filter: none;
+      --hover-row: rgba(0, 0, 0, 0.015);
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: 'Manrope', sans-serif;
+      background:
+        radial-gradient(1000px 500px at 80% -10%, rgba(255, 180, 84, 0.06), transparent 60%),
+        radial-gradient(800px 400px at 10% 80%, rgba(61, 215, 196, 0.05), transparent 50%),
+        var(--bg);
+      color: var(--txt);
+      min-height: 100vh;
+      padding: clamp(16px, 3vw, 40px);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.015;
+      z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Header Styles */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 30px;
+    }
+    
+    .brand-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .brand-tag::before {
+      content: "";
+      width: 20px;
+      height: 1px;
+      background: var(--amber);
+    }
+    
+    h1 {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 800;
+      font-size: clamp(24px, 3.5vw, 38px);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    
+    h1 .accent {
+      color: var(--amber);
+    }
+    
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    
+    .selectors {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .selectors select, #themeToggleBtn {
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--card2);
+      color: var(--txt);
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: all 0.2s;
+      outline: none;
+    }
+    
+    .selectors select {
+      cursor: pointer;
+      padding: 0 24px 0 12px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237d8da3' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    
+    .selectors select:focus, #themeToggleBtn:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(255, 180, 84, 0.15);
+    }
+    
+    #themeToggleBtn {
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    #langSelect {
+      width: 65px;
+      margin-left: auto;
+    }
+    #monthSelect {
+      width: 125px;
+    }
+    #yearSelect {
+      width: 85px;
+    }
+    
+    .btn {
+      background: var(--amber);
+      color: #1a1205;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s cubic-bezier(.2,.8,.2,1);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -6px rgba(255,180,84,.5);
+    }
+    
+    #logoutBtn:hover {
+      background: rgba(255, 122, 138, 0.08) !important;
+      color: #ff4d61 !important;
+    }
+    
+    #changePasswordTrigger:hover {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border-color: var(--amber) !important;
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--txt);
+      border: 1px solid var(--line);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: none;
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: var(--teal);
+      color: #06231f;
+    }
+    
+    .btn-success:hover {
+      box-shadow: 0 8px 20px -6px rgba(61,215,196,.5);
+    }
+    
+    /* KPI Panel */
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    
+    .kpi {
+      background: linear-gradient(160deg, var(--card2), var(--card));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    
+    .kpi:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .kpi::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-color, var(--amber));
+    }
+    
+    .kpi .k-lbl {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+    
+    .kpi .k-val {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      letter-spacing: -0.01em;
+    }
+    
+    .kpi .k-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .kpi.overtime { --accent-color: var(--teal); }
+    .kpi.undertime { --accent-color: var(--rose); }
+    .kpi.salary { --accent-color: var(--violet); }
+    .kpi.pay { --accent-color: var(--amber); }
+    
+    /* Layout Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    
+    .panel {
+      background: linear-gradient(170deg, var(--card2), var(--card));
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 24px;
+    }
+    
+    .panel-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    /* Control Form */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .input-prefix {
+      position: absolute;
+      left: 12px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      pointer-events: none;
+    }
+    
+    .form-control {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--line);
+      color: var(--txt);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+      transition: all 0.2s;
+    }
+    
+    .form-control.has-prefix {
+      padding-left: 28px;
+    }
+    
+    .form-control.has-prefix-uzs {
+      padding-left: 48px;
+    }
+    
+    .form-control:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(255, 180, 84, 0.1);
+    }
+    
+    /* Calculation Details Panel */
+    .calc-explain {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    
+    .calc-explain h4 {
+      color: var(--txt);
+      font-size: 13px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    .calc-explain p {
+      margin-bottom: 4px;
+      line-height: 1.4;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .calc-explain p span {
+      color: var(--amber);
+    }
+    
+    /* Table Panel */
+    .table-container {
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 700;
+    }
+    
+    td {
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(31, 43, 61, 0.4);
+      font-size: 14px;
+      vertical-align: middle;
+    }
+    
+    tr:hover td {
+      background: var(--hover-row);
+    }
+    
+    tr.weekend-sat td {
+      background: rgba(155, 140, 255, 0.02);
+    }
+    tr.weekend-sun td {
+      background: rgba(255, 122, 138, 0.02);
+      color: var(--muted);
+    }
+    
+    .day-badge {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background: rgba(255,255,255,0.05);
+      color: var(--txt);
+      transition: all 0.2s;
+    }
+    
+    .day-badge.ontime {
+      background: #a3d179 !important;
+      color: #173604 !important;
+    }
+    
+    .day-badge.late {
+      background: #e6b84c !important;
+      color: #3b2c07 !important;
+    }
+    
+    .day-badge.absent {
+      background: #6b2128 !important;
+      color: #ffffff !important;
+    }
+    
+    .day-badge.weekend-sat-status {
+      background: var(--violet-soft) !important;
+      color: var(--violet) !important;
+    }
+    
+    .day-badge.weekend-sun-status {
+      background: var(--rose-soft) !important;
+      color: var(--rose) !important;
+    }
+    
+    .day-badge.neutral-off {
+      background: rgba(255,255,255,0.04) !important;
+      color: var(--muted) !important;
+    }
+    
+    .day-badge.neutral-future {
+      background: rgba(255,255,255,0.04) !important;
+      color: var(--muted) !important;
+    }
+    
+    .time-input {
+      background: var(--bg-input);
+      border: 1px solid var(--line);
+      color: var(--txt);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      width: 125px;
+      transition: all 0.2s;
+    }
+    
+    .time-input:focus {
+      border-color: var(--amber);
+    }
+    
+    .time-input::-webkit-calendar-picker-indicator {
+      filter: var(--clock-filter);
+      cursor: pointer;
+    }
+    
+    .num-input {
+      background: var(--bg-input);
+      border: 1px solid var(--line);
+      color: var(--txt);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      width: 65px;
+      text-align: center;
+    }
+    
+    .num-input:focus {
+      border-color: var(--amber);
+    }
+    
+    .badge-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    
+    .badge-status.plus {
+      color: var(--teal);
+    }
+    
+    .badge-status.minus {
+      color: var(--rose);
+    }
+    
+    .row-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+    
+    .action-btn {
+      background: var(--card);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    
+    .action-btn:hover {
+      color: var(--txt);
+      border-color: var(--muted);
+    }
+    
+    .set-std-row-btn:hover {
+      color: var(--teal) !important;
+      border-color: var(--teal) !important;
+      background: var(--teal-soft) !important;
+    }
+    
+    .action-btn.holiday-row-btn {
+      font-size: 14px;
+    }
+    
+    .action-btn.holiday-row-btn:hover {
+      border-color: var(--amber) !important;
+      background: var(--amber-soft) !important;
+      color: var(--amber) !important;
+    }
+    
+    .action-btn.holiday-row-btn.active {
+      background: var(--amber-soft) !important;
+      border-color: var(--amber) !important;
+      color: var(--amber) !important;
+    }
+    
+    .clear-row-btn:hover {
+      color: var(--rose) !important;
+      border-color: var(--rose) !important;
+      background: var(--rose-soft) !important;
+    }
+
+    .table-actions-header {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      justify-content: flex-end;
+    }
+    
+    #clearAllBtn {
+      background: rgba(255, 122, 138, 0.08);
+      color: var(--rose);
+      border: 1px solid rgba(255, 122, 138, 0.2);
+    }
+    #clearAllBtn:hover {
+      background: rgba(255, 122, 138, 0.16) !important;
+      border-color: rgba(255, 122, 138, 0.3) !important;
+      transform: translateY(-1px);
+    }
+    
+    /* Toast alerts */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100;
+    }
+    
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--teal);
+      color: var(--txt);
+      padding: 14px 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    @media (max-width: 1100px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      .kpis {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .kpis {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .selectors {
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .kpis {
+        grid-template-columns: 1fr;
+      }
+    }
+    /* Mini Calendar Styles */
+    .mc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .mc-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--txt);
+      font-family: 'Bricolage Grotesque', sans-serif;
+    }
+    
+    .mc-nav-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--txt);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .mc-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .mc-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: lowercase;
+    }
+    
+    .mc-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    
+    .mc-cell {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12.5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    
+    .mc-cell.other-month {
+      color: #383c48;
+      background: transparent;
+      cursor: default;
+    }
+    
+    .mc-cell.neutral-future {
+      background: rgba(255, 255, 255, 0.04);
+      color: #b5c2d5;
+    }
+    .mc-cell.neutral-future:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .mc-cell.weekend-off {
+      background: #1d2d54;
+      color: #3574f0;
+    }
+    .mc-cell.weekend-off:hover {
+      background: #283e75;
+    }
+    
+    .mc-cell.absent {
+      background: #6b2128;
+      color: #ffffff;
+    }
+    .mc-cell.absent:hover {
+      background: #802a32;
+    }
+    
+    .mc-cell.ontime {
+      background: #a3d179;
+      color: #173604;
+    }
+    .mc-cell.ontime:hover {
+      background: #b2db8a;
+    }
+    
+    .mc-cell.late {
+      background: #e6b84c;
+      color: #3b2c07;
+    }
+    .mc-cell.late:hover {
+      background: #f2c761;
+    }
+    
+    .mc-cell.today-selected {
+      border: 2px solid #2563eb;
+    }
+    
+    .mc-cell.selected-day {
+      background: #2563eb !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen Overlay -->
+  <div id="loginOverlay" style="position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.3s; padding: 16px; box-sizing: border-box;">
+    <div class="panel" style="width: 100%; max-width: 380px; padding: 32px; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; position: relative; overflow: hidden; background: var(--card);">
+      <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; margin-bottom: 8px; color: var(--txt);">
+        Work<span class="accent" style="color: var(--amber);">Map</span>
+      </div>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.4;">
+        Введите имя пользователя и пароль.<br>Если вы заходите впервые, ваш аккаунт будет создан автоматически.
+      </p>
+      
+      <div style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Имя пользователя</label>
+          <input type="text" id="loginUsername" placeholder="Например, azimoff" style="width: 100%; box-sizing: border-box; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 14px;">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Пароль</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" style="width: 100%; box-sizing: border-box; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 14px;">
+        </div>
+        
+        <div id="loginError" style="font-size: 13px; color: var(--rose); font-weight: 600; text-align: center; min-height: 20px; margin-top: 4px;"></div>
+        
+        <button id="loginSubmitBtn" style="width: 100%; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; border-radius: 10px; background: var(--amber); color: #1a1205; border: none; cursor: pointer; transition: all 0.2s; font-family: inherit;">
+          Войти / Создать аккаунт
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal Overlay -->
+  <div id="settingsOverlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 10000; transition: opacity 0.3s; padding: 16px; box-sizing: border-box;">
+    <div class="panel" style="width: 100%; max-width: 400px; padding: 28px; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 15px 35px rgba(0,0,0,0.6); background: var(--card); text-align: left; position: relative;">
+      <h3 style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 20px; color: var(--txt); display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Настройки профиля
+      </h3>
+      
+      <!-- Avatar Display inside Settings -->
+      <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 16px;">
+        <div style="position: relative; cursor: pointer;" id="avatarUploadTrigger" title="Загрузить аватарку">
+          <div id="settingsAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--amber), var(--rose)); color: #1a1205; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; text-transform: uppercase; user-select: none; box-shadow: 0 4px 15px rgba(255, 180, 84, 0.3); overflow: hidden; background-size: cover; background-position: center;">A</div>
+          <!-- Tiny edit icon overlay on hover -->
+          <div id="avatarOverlayIcon" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; border-radius: 50%; opacity: 0; transition: opacity 0.2s;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          </div>
+        </div>
+        <div>
+          <div id="settingsUserLabel" style="font-weight: 700; font-size: 15px; color: var(--txt);">azimoff</div>
+          <button id="avatarUploadBtn" style="background: transparent; border: none; color: var(--amber); cursor: pointer; font-size: 12px; font-weight: 700; padding: 4px 0; display: block; outline: none; margin-top: 2px;" title="Загрузить новое изображение с компьютера">Изменить аватарку</button>
+        </div>
+        <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+      </div>
+      
+      <!-- Username Form -->
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label style="font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Имя пользователя (логин)</label>
+        <input type="text" id="settingsUsernameInput" placeholder="Новое имя" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 13.5px;">
+      </div>
+      
+      <!-- Action Menu List -->
+      <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px;">
+        <!-- Change Password Accordion Trigger -->
+        <div id="changePasswordTrigger" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); cursor: pointer; transition: background 0.2s; user-select: none;">
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--txt);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Изменить пароль
+          </div>
+          <svg id="changePasswordChevron" style="transform: rotate(0deg); transition: transform 0.2s; color: var(--muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        
+        <!-- Password Fields Container (Hidden by default) -->
+        <div id="passwordFieldsContainer" style="max-height: 0; overflow: hidden; transition: all 0.3s ease-out; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; background: transparent;">
+          <div style="height: 8px;"></div>
+          <!-- Current Password Field -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Текущий пароль (подтверждение)</label>
+            <input type="password" id="settingsCurrentPassword" placeholder="Введите текущий пароль" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 13px;">
+          </div>
+          
+          <!-- New Password Field -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Новый пароль</label>
+            <input type="password" id="settingsNewPassword" placeholder="Минимум 4 символа" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 13px;">
+          </div>
+          
+          <!-- Confirm New Password Field -->
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Подтвердите новый пароль</label>
+            <input type="password" id="settingsConfirmPassword" placeholder="Повторите новый пароль" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 13px;">
+          </div>
+        </div>
+        
+        <!-- Logout List Item -->
+        <div id="logoutBtn" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; background: rgba(255, 122, 138, 0.02); border: 1px solid rgba(255, 122, 138, 0.15); cursor: pointer; transition: background 0.2s; user-select: none; margin-top: 4px;">
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: var(--rose);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Выйти
+          </div>
+          <svg style="color: var(--rose); opacity: 0.6;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+      </div>
+      
+      <div id="settingsError" style="font-size: 12.5px; color: var(--rose); font-weight: 600; margin-bottom: 16px; min-height: 18px; text-align: center;"></div>
+      
+      <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 16px;">
+        <button id="settingsCancelBtn" style="padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--txt); cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit;">Отмена</button>
+        <button id="settingsSaveBtn" style="padding: 10px 18px; border-radius: 10px; border: none; background: var(--amber); color: #1a1205; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit;">Сохранить изменения</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grain"></div>
+  
+  <div class="wrap">
+    <!-- Header -->
+    <header>
+      <div>
+        <div class="brand-tag" data-i18n="brandTag">Nillmax Work Schedule</div>
+        <h1 data-i18n="title">Управление <span class="accent">Временем</span> & Зарплатой</h1>
+        <p class="subtitle" data-i18n="subtitle">Автоматический расчет рабочего времени, переработок и оклада в долларах и сумах</p>
+      </div>
+      
+      <div class="selectors">
+        <!-- Save Status (autosave indicator) -->
+        <span id="saveStatus" style="font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; gap: 6px; user-select: none; margin-right: 12px;">
+          <span id="saveStatusDot" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); transition: background 0.3s;"></span>
+          <span id="saveStatusText">Сохранено</span>
+        </span>
+
+        <!-- Month Select -->
+        <select id="monthSelect">
+          <option value="01">Январь</option>
+          <option value="02">Февраль</option>
+          <option value="03">Март</option>
+          <option value="04">Апрель</option>
+          <option value="05">Май</option>
+          <option value="06">Июнь</option>
+          <option value="07">Июль</option>
+          <option value="08">Август</option>
+          <option value="09">Сентябрь</option>
+          <option value="10">Октябрь</option>
+          <option value="11">Ноябрь</option>
+          <option value="12">Декабрь</option>
+        </select>
+        
+        <!-- Year Select -->
+        <select id="yearSelect">
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+        </select>
+
+        <!-- Language Select -->
+        <select id="langSelect">
+          <option value="ru">RU</option>
+          <option value="uz">UZ</option>
+        </select>
+
+        <!-- Theme Toggle Button -->
+        <button id="themeToggleBtn" title="Сменить тему">
+          <!-- Sun Icon -->
+          <svg id="themeSunIcon" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <!-- Moon Icon -->
+          <svg id="themeMoonIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+
+        <!-- User Section -->
+        <div id="userSection" style="display: flex; align-items: center; border-left: 1px solid var(--line); padding-left: 12px; margin-left: 4px; height: 40px;">
+          <div id="userAvatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--amber), var(--rose)); color: #1a1205; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; text-transform: uppercase; user-select: none; box-shadow: 0 0 10px rgba(255, 180, 84, 0.2); cursor: pointer;" title="Открыть настройки">A</div>
+        </div>
+      </div>
+    </header>
+    
+    <!-- KPI Summary Grid -->
+    <section class="kpis">
+      <div class="kpi">
+        <div class="k-lbl" data-i18n="kpiPlanLbl">План часов</div>
+        <div class="k-val" id="kpiPlan">0.0</div>
+        <div class="k-sub" data-i18n="kpiPlanSub">Ishlashi kerak jami</div>
+      </div>
+      <div class="kpi">
+        <div class="k-lbl" data-i18n="kpiActualLbl">Отработано</div>
+        <div class="k-val" id="kpiActual">0.0</div>
+        <div class="k-sub" data-i18n="kpiActualSub">Ishladi jami soat</div>
+      </div>
+      <div class="kpi" id="kpiBalanceCard">
+        <div class="k-lbl" data-i18n="kpiBalanceLbl">Баланс переработок</div>
+        <div class="k-val" id="kpiBalance">0.0</div>
+        <div class="k-sub" data-i18n="kpiBalanceSub">Plus / Minus</div>
+      </div>
+      <div class="kpi debt" id="kpiDebtCard" style="--accent-color: var(--rose);">
+        <div class="k-lbl" data-i18n="kpiDebtLbl">Долг по часам</div>
+        <div class="k-val" id="kpiDebt">0.00 ч</div>
+        <div class="k-sub" data-i18n="kpiDebtSub">Nedorabotka</div>
+      </div>
+      <div class="kpi extra" id="kpiExtraCard" style="--accent-color: var(--teal);">
+        <div class="k-lbl" data-i18n="kpiExtraLbl">Общий плюс часов</div>
+        <div class="k-val" id="kpiExtra">0.00 ч</div>
+        <div class="k-sub" data-i18n="kpiExtraSub">Qo'shimcha soat</div>
+      </div>
+    </section>
+    
+    <!-- Core Layout -->
+    <main class="dashboard-grid">
+      <!-- Left Sidebar Container -->
+      <div class="sidebar-container" style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- Sidebar Controls -->
+        <section class="panel" style="padding: 16px 20px;">
+          <div class="panel-title" id="financeHeader" style="cursor: pointer; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+            <span>Финансовые Настройки</span>
+            <svg id="financeChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s; transform: rotate(180deg); color: var(--muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          
+          <div id="financeContent" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, margin-top 0.3s; margin-top: 0;">
+            <div style="height: 12px;"></div>
+            <div class="form-group">
+              <label for="inputSalary">Базовый оклад, USD</label>
+              <div class="input-wrapper">
+                <span class="input-prefix">$</span>
+                <input type="number" id="inputSalary" class="form-control has-prefix" value="0" step="50" placeholder="0">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="inputBonus">Запланированный бонус, USD</label>
+              <div class="input-wrapper">
+                <span class="input-prefix">$</span>
+                <input type="number" id="inputBonus" class="form-control has-prefix" value="0" step="50" placeholder="0">
+              </div>
+            </div>
+    
+            <div class="form-group">
+              <label for="inputUnplannedBonus">Незапланированный бонус, USD</label>
+              <div class="input-wrapper">
+                <span class="input-prefix">$</span>
+                <input type="number" id="inputUnplannedBonus" class="form-control has-prefix" value="0" step="50" placeholder="0">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="inputCardTransfer">Перевод на карту, UZS</label>
+              <div class="input-wrapper">
+                <span class="input-prefix">сум</span>
+                <input type="number" id="inputCardTransfer" class="form-control has-prefix-uzs" value="0" step="100000" placeholder="0">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="inputAvans">Полученный аванс, UZS</label>
+              <div class="input-wrapper">
+                <span class="input-prefix">сум</span>
+                <input type="number" id="inputAvans" class="form-control has-prefix-uzs" value="0" step="100000" placeholder="0">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="inputKurs">Курс валюты (USD/UZS)</label>
+              <div class="input-wrapper">
+                <span class="input-prefix">сум</span>
+                <input type="number" id="inputKurs" class="form-control has-prefix-uzs" value="" step="50" placeholder="Загрузка...">
+              </div>
+            </div>
+            
+            <!-- Interactive Formula Breakdown -->
+            <div class="calc-explain" id="formulaBreakdown">
+              <h4>Детализация расчета:</h4>
+              <div id="breakdownText"></div>
+            </div>
+          </div>
+        </section>
+  
+        <!-- Salary History Panel -->
+        <section class="panel" style="padding: 16px 20px;">
+          <div class="panel-title" id="historyHeader" style="cursor: pointer; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+            <span>История зарплаты</span>
+            <svg id="historyChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s; transform: rotate(0deg); color: var(--muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          
+          <div id="historyContent" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, margin-top 0.3s; margin-top: 0;">
+            <div class="table-container" style="max-height: 250px; overflow-y: auto; padding-top: 12px;">
+              <table style="font-size: 12.5px;">
+                <thead>
+                  <tr>
+                    <th id="histColMonth">Месяц</th>
+                    <th id="histColHours" style="text-align: right;">Часы</th>
+                    <th id="histColPayout" style="text-align: right;">Остаток (сум)</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Mini Calendar Panel -->
+        <section class="panel" style="padding: 16px 20px;">
+          <div class="mc-header">
+            <button class="mc-nav-btn" id="mcPrevBtn" title="Предыдущий месяц">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div class="mc-title" id="mcTitle">Июль 2026</div>
+            <button class="mc-nav-btn" id="mcNextBtn" title="Следующий месяц">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+          
+          <div class="mc-weekdays">
+            <span id="mcWd0">пн</span>
+            <span id="mcWd1">вт</span>
+            <span id="mcWd2">ср</span>
+            <span id="mcWd3">чт</span>
+            <span id="mcWd4">пт</span>
+            <span id="mcWd5">сб</span>
+            <span id="mcWd6">вс</span>
+          </div>
+          
+          <div class="mc-grid" id="mcGrid">
+            <!-- Dynamically populated days -->
+          </div>
+
+          <!-- Divider line -->
+          <div style="border-top: 1px solid var(--line); margin: 16px 0 12px 0;"></div>
+
+          <!-- Selected Day Details Card -->
+          <div id="mcSelectedDayCard" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.2); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line);">
+            <div style="text-align: left;">
+              <div id="mcSelArrival" style="font-size: 28px; font-weight: 700; color: var(--txt); font-family: 'JetBrains Mono', monospace; line-height: 1.2;">--:--</div>
+              <div id="selArrivalLbl" style="font-size: 12px; color: var(--muted); margin-top: 4px;">приход</div>
+            </div>
+            <div style="text-align: right;">
+              <div id="mcSelDeparture" style="font-size: 28px; font-weight: 700; color: var(--txt); font-family: 'JetBrains Mono', monospace; line-height: 1.2;">--:--</div>
+              <div id="selDepartureLbl" style="font-size: 12px; color: var(--muted); margin-top: 4px;">уход</div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      <!-- Table Logs -->
+      <section class="panel">
+        <div class="panel-title">
+          <span id="timesheetTitle" data-i18n="timesheetTitle">Табель учета времени</span>
+          <div class="table-actions-header">
+            <button class="btn btn-secondary" id="fillWeekdaysBtn" style="padding: 6px 12px; font-size: 12px;">Заполнить будни (09:00 - 18:00)</button>
+            <button class="btn btn-secondary" id="fillSaturdaysBtn" style="padding: 6px 12px; font-size: 12px;">Заполнить субботы (09:00 - 17:00)</button>
+            <button class="btn btn-secondary" id="clearAllBtn" style="padding: 6px 12px; font-size: 12px;">Удалить все заполненные</button>
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table id="scheduleTable">
+            <thead>
+              <tr>
+                <th style="width: 50px;" id="colDate">Число</th>
+                <th id="colWday">День недели</th>
+                <th id="colArrival">Приход (Keldi)</th>
+                <th id="colDeparture">Уход (Ketdi)</th>
+                <th style="width: 90px; text-align: center;" id="colPlan">План, ч</th>
+                <th style="width: 90px; text-align: center;" id="colActual">Факт, ч</th>
+                <th style="width: 90px; text-align: center;" id="colDiff">Разница, ч</th>
+                <th style="width: 80px; text-align: center;" id="colActions">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  
+  <div class="toast-container">
+    <div class="toast" id="toast">Данные успешно сохранены!</div>
+  </div>
+  
+  <script>
+    // State Variables
+    let currentData = {
+      days: {},
+      salary: 700.0,
+      bonus: 0.0,
+      unplanned_bonus: 0.0,
+      kurs: 12050.0,
+      avans: 0.0,
+      card_transfer: 0.0,
+      calc_method: 'proportional'
+    };
+    
+    let isHistoryExpanded = false;
+    let isFinanceExpanded = localStorage.getItem('financeExpanded') !== 'false';
+    let selectedDay = 1;
+    
+    // Day Names in Uzbek
+    const UZ_DAYS = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'];
+    const UZ_DAYS_SHORT = ['Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha', 'Ya'];
+    
+    // DOM Elements
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const tableBody = document.getElementById('tableBody');
+    
+    const inputSalary = document.getElementById('inputSalary');
+    const inputBonus = document.getElementById('inputBonus');
+    const inputUnplannedBonus = document.getElementById('inputUnplannedBonus');
+    const inputKurs = document.getElementById('inputKurs');
+    const inputAvans = document.getElementById('inputAvans');
+    const inputCardTransfer = document.getElementById('inputCardTransfer');
+    
+    const kpiPlan = document.getElementById('kpiPlan');
+    const kpiActual = document.getElementById('kpiActual');
+    const kpiBalance = document.getElementById('kpiBalance');
+    const kpiBalanceCard = document.getElementById('kpiBalanceCard');
+    const kpiDebt = document.getElementById('kpiDebt');
+    const kpiExtra = document.getElementById('kpiExtra');
+    const breakdownText = document.getElementById('breakdownText');
+    const toast = document.getElementById('toast');
+    
+    // Mini Calendar Elements
+    const mcTitle = document.getElementById('mcTitle');
+    const mcGrid = document.getElementById('mcGrid');
+    const mcPrevBtn = document.getElementById('mcPrevBtn');
+    const mcNextBtn = document.getElementById('mcNextBtn');
+    
+    // Language and Theme Elements
+    const langSelect = document.getElementById('langSelect');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    
+    // Auth Elements
+    const loginOverlay = document.getElementById('loginOverlay');
+    const loginUsernameInput = document.getElementById('loginUsername');
+    const loginPasswordInput = document.getElementById('loginPassword');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const loginError = document.getElementById('loginError');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userAvatar = document.getElementById('userAvatar');
+    
+    // Settings Elements
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const settingsAvatar = document.getElementById('settingsAvatar');
+    const settingsUserLabel = document.getElementById('settingsUserLabel');
+    const settingsUsernameInput = document.getElementById('settingsUsernameInput');
+    const settingsCurrentPassword = document.getElementById('settingsCurrentPassword');
+    const settingsNewPassword = document.getElementById('settingsNewPassword');
+    const settingsConfirmPassword = document.getElementById('settingsConfirmPassword');
+    const settingsError = document.getElementById('settingsError');
+    const settingsCancelBtn = document.getElementById('settingsCancelBtn');
+    const settingsSaveBtn = document.getElementById('settingsSaveBtn');
+    const avatarUploadTrigger = document.getElementById('avatarUploadTrigger');
+    const avatarUploadBtn = document.getElementById('avatarUploadBtn');
+    const avatarFileInput = document.getElementById('avatarFileInput');
+    const avatarOverlayIcon = document.getElementById('avatarOverlayIcon');
+    
+    const TRANSLATIONS = {
+      ru: {
+        brandTag: "Nillmax Work Schedule",
+        title: "Управление <span class=\"accent\">Временем</span> & Зарплатой",
+        subtitle: "Автоматический расчет рабочего времени, переработок и оклада в долларах и сумах",
+        kpiPlanLbl: "План часов",
+        kpiPlanSub: "План на месяц",
+        kpiActualLbl: "Отработано",
+        kpiActualSub: "Отработано всего",
+        kpiBalanceLbl: "Баланс переработок",
+        kpiBalanceSub: "Разница от плана",
+        kpiDebtLbl: "Долг по часам",
+        kpiDebtSub: "Недоработка",
+        kpiExtraLbl: "Общий плюс часов",
+        kpiExtraSub: "Переработка",
+        finSettingsTitle: "Финансовые Настройки",
+        lblSalary: "Базовый оклад, USD",
+        lblBonus: "Запланированный бонус, USD",
+        lblUnplannedBonus: "Незапланированный бонус, USD",
+        lblKurs: "Курс валюты (USD/UZS)",
+        lblAvans: "Полученный аванс, UZS",
+        lblCardTransfer: "Перевод на карту, UZS",
+        breakdownTitle: "Детализация расчета:",
+        historyTitle: "История зарплаты",
+        colDate: "Число",
+        colWday: "День недели",
+        colArrival: "Приход (Keldi)",
+        colDeparture: "Уход (Ketdi)",
+        colPlan: "План, ч",
+        colActual: "Факт, ч",
+        colDiff: "Разница, ч",
+        colActions: "Действия",
+        timesheetTitle: "Табель учета времени",
+        btnFillWeekdays: "Заполнить будни (09:00 - 18:00)",
+        btnFillSaturdays: "Заполнить субботы (09:00 - 17:00)",
+        btnClearAll: "Удалить все заполненные",
+        btnSave: "Сохранить",
+        lblArrival: "приход",
+        lblDeparture: "уход",
+        saveStatusSaved: "Сохранено",
+        saveStatusSaving: "Сохранение...",
+        saveStatusError: "Ошибка сохранения",
+        saveStatusNetworkError: "Ошибка сети",
+        toastSaved: "Данные успешно сохранены в БД!",
+        toastSaveError: "Ошибка при сохранении!",
+        toastSaveNetworkError: "Сетевая ошибка при сохранении!",
+        toastWeekdaysFilled: "Будние дни заполнены значениями",
+        toastSaturdaysFilled: "Субботы заполнены значениями",
+        toastCleared: "Все заполненные часы прихода и ухода удалены",
+        toastHolidaySet: "День {day} отмечен как праздничный 🎊 (План = 0 ч)",
+        toastHolidayRemoved: "День {day} возвращен в обычный режим",
+        historyNoEntries: "Нет записей",
+        historyTooltip: "Нажмите, чтобы переключить на этот месяц",
+        mcTitleMonths: ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
+        breakdownBase: "База ($)",
+        breakdownRate: "Ставка / час",
+        breakdownAccrued: "Начислено",
+        breakdownInUzs: "В сумах",
+        breakdownMinusAvans: "Аванс",
+        breakdownMinusCard: "На карту",
+        breakdownRemainingCash: "Остаток наличными"
+      },
+      uz: {
+        brandTag: "WorkMap Ish Grafigi",
+        title: "Ish vaqti va <span class=\"accent\">Maoshni</span> boshqarish",
+        subtitle: "Ish vaqti, qo'shimcha soatlar va maoshni dollar hamda so'mda avtomatik hisoblash",
+        kpiPlanLbl: "Soat rejasi",
+        kpiPlanSub: "Jami ishlashi kerak",
+        kpiActualLbl: "Ishlangan vaqt",
+        kpiActualSub: "Jami ishlagan soati",
+        kpiBalanceLbl: "Farq balansi",
+        kpiBalanceSub: "Plus / Minus",
+        kpiDebtLbl: "Soat qarzdorligi",
+        kpiDebtSub: "Kam ishlangan soat",
+        kpiExtraLbl: "Jami qo'shimcha vaqt",
+        kpiExtraSub: "Ortiqcha ishlangan",
+        finSettingsTitle: "Moliyaviy sozlamalar",
+        lblSalary: "Baza oylik maoshi, USD",
+        lblBonus: "Rejalashtirilgan bonus, USD",
+        lblUnplannedBonus: "Kutilmagan mukofot (premiya), USD",
+        lblKurs: "Valyuta kursi (USD/UZS)",
+        lblAvans: "Olingan avans, UZS",
+        lblCardTransfer: "Kartaga o'tkazma, UZS",
+        breakdownTitle: "Hisob-kitob tafsilotlari:",
+        historyTitle: "Maoshlar tarixi",
+        colDate: "Sana",
+        colWday: "Hafta kuni",
+        colArrival: "Kelish (Keldi)",
+        colDeparture: "Ketish (Ketdi)",
+        colPlan: "Reja, soat",
+        colActual: "Fact, soat",
+        colDiff: "Farq, soat",
+        colActions: "Harakatlar",
+        timesheetTitle: "Ish vaqtini hisobga olish tabeli",
+        btnFillWeekdays: "Ish kunlarini to'ldirish (09:00 - 18:00)",
+        btnFillSaturdays: "Shanba kunlarini to'ldirish (09:00 - 17:00)",
+        btnClearAll: "Barcha to'ldirilganlarni o'chirish",
+        btnSave: "Saqlash",
+        lblArrival: "kelish",
+        lblDeparture: "ketish",
+        saveStatusSaved: "Saqlandi",
+        saveStatusSaving: "Saqlanmoqda...",
+        saveStatusError: "Saqlashda xato",
+        saveStatusNetworkError: "Aloqa xatosi",
+        toastSaved: "Ma'lumotlar muvaffaqiyatli saqlandi!",
+        toastSaveError: "Saqlashda xato yuz berdi!",
+        toastSaveNetworkError: "Tizimga ulanishda xato yuz berdi!",
+        toastWeekdaysFilled: "Ish kunlari quyidagi qiymatlar bilan to'ldirildi:",
+        toastSaturdaysFilled: "Shanba kunlari quyidagi qiymatlar bilan to'ldirildi:",
+        toastCleared: "Barcha to'ldirilgan kelish va ketish vaqtlari o'chirildi",
+        toastHolidaySet: "{day}-kun bayram kuni deb belgilandi 🎊 (Reja = 0 soat)",
+        toastHolidayRemoved: "{day}-kun odatiy ish kuniga qaytarildi",
+        historyNoEntries: "Yozuvlar yo'q",
+        historyTooltip: "Ushbu oyga o'tish uchun bosing",
+        mcTitleMonths: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
+        breakdownBase: "Baza ($)",
+        breakdownRate: "Soatlik stavka",
+        breakdownAccrued: "Hisoblandi",
+        breakdownInUzs: "So'mda",
+        breakdownMinusAvans: "Avans",
+        breakdownMinusCard: "Kartaga",
+        breakdownRemainingCash: "Naqd pul qoldig'i"
+      }
+    };
+    
+    // Set default month/year selector to current date
+    const today = new Date();
+    const currentYearStr = today.getFullYear().toString();
+    const currentMonthStr = (today.getMonth() + 1).toString().padStart(2, '0');
+    
+    monthSelect.value = currentMonthStr;
+    yearSelect.value = currentYearStr;
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramYM = urlParams.get('date');
+      if (paramYM && paramYM.length === 7) {
+        const [y, m] = paramYM.split('-');
+        yearSelect.value = y;
+        monthSelect.value = m;
+      }
+      
+      // Theme toggler click listener
+      themeToggleBtn.addEventListener('click', () => {
+        const nextTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        localStorage.setItem('theme', nextTheme);
+        updateThemeIcons();
+      });
+      
+      // Language select change listener
+      langSelect.addEventListener('change', applyLanguage);
+      
+      // Load saved language and theme
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcons();
+      
+      const savedLang = localStorage.getItem('lang') || 'ru';
+      langSelect.value = savedLang;
+      
+      // Auth flow and helper functions
+      let currentUser = null;
+      let currentAvatarBase64 = null;
+      
+      function updateAvatarText(username, avatarBase64) {
+        if (avatarBase64 !== undefined) {
+          currentAvatarBase64 = avatarBase64;
+        }
+        
+        const letter = username ? username.charAt(0).toUpperCase() : 'U';
+        settingsUserLabel.textContent = username || '';
+        
+        const avatars = [userAvatar, settingsAvatar];
+        avatars.forEach(el => {
+          if (el) {
+            if (currentAvatarBase64) {
+              el.style.background = `url(${currentAvatarBase64}) center/cover no-repeat`;
+              el.textContent = '';
+            } else {
+              el.style.background = 'linear-gradient(135deg, var(--amber), var(--rose))';
+              el.textContent = letter;
+            }
+          }
+        });
+      }
+      
+      async function checkAuth() {
+        try {
+          const res = await fetch('/api/user');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.username) {
+              currentUser = data.username;
+              updateAvatarText(currentUser, data.avatar || null);
+              loginOverlay.style.display = 'none';
+              return true;
+            }
+          }
+        } catch (err) {
+          console.error("Auth check failed", err);
+        }
+        loginOverlay.style.display = 'flex';
+        return false;
+      }
+      
+      async function handleLogin() {
+        const username = loginUsernameInput.value.trim();
+        const password = loginPasswordInput.value;
+        
+        if (!username || !password) {
+          loginError.textContent = "Заполните все поля!";
+          return;
+        }
+        
+        loginError.textContent = "";
+        try {
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            currentUser = username.toLowerCase();
+            updateAvatarText(currentUser, data.avatar || null);
+            loginOverlay.style.display = 'none';
+            
+            // Clean inputs
+            loginUsernameInput.value = "";
+            loginPasswordInput.value = "";
+            
+            // Initial load
+            applyLanguage();
+          } else {
+            loginError.textContent = data.message || "Ошибка входа";
+          }
+        } catch (err) {
+          console.error(err);
+          loginError.textContent = "Ошибка подключения к серверу";
+        }
+      }
+      
+      async function handleLogout() {
+        try {
+          await fetch('/api/logout', { method: 'POST' });
+          currentUser = null;
+          currentAvatarBase64 = null;
+          loginOverlay.style.display = 'flex';
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      
+      async function handleSaveSettings() {
+        const newUsername = settingsUsernameInput.value.trim().toLowerCase();
+        const currentPassword = settingsCurrentPassword.value;
+        const newPassword = settingsNewPassword.value;
+        const confirmPassword = settingsConfirmPassword.value;
+        
+        if (newPassword && newPassword !== confirmPassword) {
+          settingsError.textContent = "Новые пароли не совпадают!";
+          return;
+        }
+        
+        const avatarChanged = currentAvatarBase64 !== initialAvatarBase64;
+        const usernameChanged = newUsername !== currentUser;
+        const passwordChanged = !!newPassword;
+        const credentialsChanged = usernameChanged || passwordChanged;
+        
+        if (credentialsChanged && !currentPassword) {
+          settingsError.textContent = "Введите текущий пароль для подтверждения!";
+          return;
+        }
+        
+        settingsError.textContent = "";
+        try {
+          const res = await fetch('/api/update-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              new_username: newUsername,
+              current_password: currentPassword,
+              new_password: newPassword,
+              confirm_password: confirmPassword,
+              avatar: currentAvatarBase64
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            currentUser = data.username;
+            updateAvatarText(currentUser, data.avatar || null);
+            initialAvatarBase64 = data.avatar || null;
+            settingsOverlay.style.display = 'none';
+            showToast("Профиль успешно обновлен!");
+            
+            // Clear passwords fields
+            settingsCurrentPassword.value = "";
+            settingsNewPassword.value = "";
+            settingsConfirmPassword.value = "";
+            
+            applyLanguage();
+          } else {
+            settingsError.textContent = data.message || "Ошибка обновления настроек";
+          }
+        } catch (err) {
+          console.error(err);
+          settingsError.textContent = "Ошибка соединения";
+        }
+      }
+      
+      let initialAvatarBase64 = null;
+      
+      let isPasswordExpanded = false;
+      const changePasswordTrigger = document.getElementById('changePasswordTrigger');
+      const changePasswordChevron = document.getElementById('changePasswordChevron');
+      const passwordFieldsContainer = document.getElementById('passwordFieldsContainer');
+      
+      changePasswordTrigger.addEventListener('click', () => {
+        isPasswordExpanded = !isPasswordExpanded;
+        if (isPasswordExpanded) {
+          passwordFieldsContainer.style.maxHeight = passwordFieldsContainer.scrollHeight + "px";
+          changePasswordChevron.style.transform = "rotate(180deg)";
+        } else {
+          passwordFieldsContainer.style.maxHeight = "0";
+          changePasswordChevron.style.transform = "rotate(0deg)";
+          settingsCurrentPassword.value = "";
+          settingsNewPassword.value = "";
+          settingsConfirmPassword.value = "";
+        }
+      });
+      
+      const openSettingsModal = () => {
+        settingsUsernameInput.value = currentUser;
+        settingsCurrentPassword.value = "";
+        settingsNewPassword.value = "";
+        settingsConfirmPassword.value = "";
+        settingsError.textContent = "";
+        initialAvatarBase64 = currentAvatarBase64;
+        updateAvatarText(currentUser);
+        
+        // Reset change password accordion
+        isPasswordExpanded = false;
+        passwordFieldsContainer.style.maxHeight = "0";
+        changePasswordChevron.style.transform = "rotate(0deg)";
+        
+        settingsOverlay.style.display = 'flex';
+        settingsUsernameInput.focus();
+      };
+      
+      userAvatar.addEventListener('click', openSettingsModal);
+      settingsCancelBtn.addEventListener('click', () => {
+        settingsOverlay.style.display = 'none';
+      });
+      settingsSaveBtn.addEventListener('click', handleSaveSettings);
+      
+      avatarUploadTrigger.addEventListener('click', () => avatarFileInput.click());
+      avatarUploadBtn.addEventListener('click', () => avatarFileInput.click());
+      
+      avatarFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 1.5 * 1024 * 1024) {
+            settingsError.textContent = "Размер файла не должен превышать 1.5 МБ!";
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            currentAvatarBase64 = evt.target.result;
+            updateAvatarText(currentUser, currentAvatarBase64);
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      
+      avatarUploadTrigger.addEventListener('mouseenter', () => {
+        avatarOverlayIcon.style.opacity = '1';
+      });
+      avatarUploadTrigger.addEventListener('mouseleave', () => {
+        avatarOverlayIcon.style.opacity = '0';
+      });
+      
+      const settingsInputs = [settingsUsernameInput, settingsCurrentPassword, settingsNewPassword, settingsConfirmPassword];
+      settingsInputs.forEach(input => {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') handleSaveSettings();
+        });
+      });
+      
+      loginSubmitBtn.addEventListener('click', handleLogin);
+      loginPasswordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+      logoutBtn.addEventListener('click', handleLogout);
+      
+      // Check auth before loading data
+      checkAuth().then(loggedIn => {
+        if (loggedIn) {
+          applyLanguage();
+        }
+      });
+      
+      // Setup Event Listeners
+      monthSelect.addEventListener('change', loadMonthData);
+      yearSelect.addEventListener('change', loadMonthData);
+      
+      // Financial input listeners for real-time recalculation
+      inputSalary.addEventListener('input', syncAndRecalculate);
+      inputBonus.addEventListener('input', syncAndRecalculate);
+      inputUnplannedBonus.addEventListener('input', syncAndRecalculate);
+      inputKurs.addEventListener('input', syncAndRecalculate);
+      inputAvans.addEventListener('input', syncAndRecalculate);
+      inputCardTransfer.addEventListener('input', syncAndRecalculate);
+      document.getElementById('fillWeekdaysBtn').addEventListener('click', () => fillStandardTimes('weekday', '09:00', '18:00'));
+      document.getElementById('fillSaturdaysBtn').addEventListener('click', () => fillStandardTimes('saturday', '09:00', '17:00'));
+      document.getElementById('clearAllBtn').addEventListener('click', clearAllTimes);
+      
+      // Collapsible History Listener
+      const historyHeader = document.getElementById('historyHeader');
+      historyHeader.addEventListener('click', () => {
+        isHistoryExpanded = !isHistoryExpanded;
+        toggleHistoryAccordion();
+      });
+      
+      // Collapsible Finance Listener
+      const financeHeader = document.getElementById('financeHeader');
+      financeHeader.addEventListener('click', () => {
+        isFinanceExpanded = !isFinanceExpanded;
+        localStorage.setItem('financeExpanded', isFinanceExpanded);
+        toggleFinanceAccordion(true);
+      });
+      toggleFinanceAccordion(false);
+      
+      // Mini Calendar Navigation Listeners
+      mcPrevBtn.addEventListener('click', () => navigateMonth(-1));
+      mcNextBtn.addEventListener('click', () => navigateMonth(1));
+    });
+    
+    function updateThemeIcons() {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const themeSunIcon = document.getElementById('themeSunIcon');
+      const themeMoonIcon = document.getElementById('themeMoonIcon');
+      if (isLight) {
+        themeSunIcon.classList.remove('hidden');
+        themeMoonIcon.classList.add('hidden');
+      } else {
+        themeSunIcon.classList.add('hidden');
+        themeMoonIcon.classList.remove('hidden');
+      }
+    }
+    
+    function applyLanguage() {
+      const lang = langSelect.value;
+      const t = TRANSLATIONS[lang];
+      
+      localStorage.setItem('lang', lang);
+      
+      // Translate elements with data-i18n
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (t[key]) {
+          if (key === 'title') {
+            el.innerHTML = t[key];
+          } else {
+            el.textContent = t[key];
+          }
+        }
+      });
+      
+      // Translate headers
+      document.getElementById('colDate').textContent = t.colDate;
+      document.getElementById('colWday').textContent = t.colWday;
+      document.getElementById('colArrival').textContent = t.colArrival;
+      document.getElementById('colDeparture').textContent = t.colDeparture;
+      document.getElementById('colPlan').textContent = t.colPlan;
+      document.getElementById('colActual').textContent = t.colActual;
+      document.getElementById('colDiff').textContent = t.colDiff;
+      document.getElementById('colActions').textContent = t.colActions;
+      
+      // Translate history headers
+      document.getElementById('histColMonth').textContent = lang === 'ru' ? 'Месяц' : 'Oy';
+      document.getElementById('histColHours').textContent = lang === 'ru' ? 'Часы' : 'Soat';
+      document.getElementById('histColPayout').textContent = lang === 'ru' ? 'Остаток (сум)' : 'Qoldiq (so\'m)';
+      
+      // Selected day labels
+      document.getElementById('selArrivalLbl').textContent = t.lblArrival;
+      document.getElementById('selDepartureLbl').textContent = t.lblDeparture;
+      
+      // Action buttons
+      document.getElementById('fillWeekdaysBtn').textContent = t.btnFillWeekdays;
+      document.getElementById('fillSaturdaysBtn').textContent = t.btnFillSaturdays;
+      document.getElementById('clearAllBtn').textContent = t.btnClearAll;
+      
+      // Mini-calendar weekdays
+      const mcWeekdaysRu = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
+      const mcWeekdaysUz = ["du", "se", "cho", "pa", "ju", "sha", "ya"];
+      const wds = lang === 'ru' ? mcWeekdaysRu : mcWeekdaysUz;
+      for (let i = 0; i < 7; i++) {
+        document.getElementById(`mcWd${i}`).textContent = wds[i];
+      }
+      // Update month select options dynamically to localize month names
+      const ruMonths = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+      const uzMonths = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
+      const months = lang === 'ru' ? ruMonths : uzMonths;
+      
+      const currentSelectedVal = monthSelect.value;
+      monthSelect.innerHTML = '';
+      months.forEach((mName, idx) => {
+        const opt = document.createElement('option');
+        opt.value = (idx + 1).toString().padStart(2, '0');
+        opt.textContent = mName;
+        monthSelect.appendChild(opt);
+      });
+      monthSelect.value = currentSelectedVal;
+      
+      loadMonthData();
+      loadHistory();
+    }
+    
+    // Fetch month details from API
+    async function loadMonthData() {
+      const ym = `${yearSelect.value}-${monthSelect.value}`;
+      try {
+        const res = await fetch(`/api/schedule?year_month=${ym}`);
+        if (res.status === 401) {
+          loginOverlay.style.display = 'flex';
+          return;
+        }
+        const data = await res.json();
+        
+        currentData = data;
+        
+        // Initialize selected day to today (if current month/year matches) or 1
+        const today = new Date();
+        const ymToday = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+        if (ym === ymToday) {
+          selectedDay = today.getDate();
+        } else {
+          selectedDay = 1;
+        }
+        
+        // Populate inputs
+        inputSalary.value = data.salary;
+        inputBonus.value = data.bonus;
+        inputUnplannedBonus.value = data.unplanned_bonus || 0;
+        inputKurs.value = data.kurs;
+        inputAvans.value = data.avans;
+        inputCardTransfer.value = data.card_transfer || 0;
+        
+        renderTable();
+        calculateTotals();
+        
+        // Reset status to green
+        const lang = langSelect.value;
+        document.getElementById('saveStatusDot').style.background = 'var(--teal)';
+        document.getElementById('saveStatusText').textContent = TRANSLATIONS[lang].saveStatusSaved;
+      } catch (err) {
+        console.error("Failed to load month data", err);
+      }
+    }
+    
+    // Save details to backend
+    async function saveMonthData() {
+      const ym = `${yearSelect.value}-${monthSelect.value}`;
+      syncState();
+      
+      const payload = {
+        year_month: ym,
+        ...currentData
+      };
+      
+      const lang = langSelect.value;
+      try {
+        const res = await fetch('/api/schedule', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.status === 401) {
+          loginOverlay.style.display = 'flex';
+          return;
+        }
+        const result = await res.json();
+        if (result.success) {
+          showToast(TRANSLATIONS[lang].toastSaved);
+          document.getElementById('saveStatusDot').style.background = 'var(--teal)';
+          document.getElementById('saveStatusText').textContent = TRANSLATIONS[lang].saveStatusSaved;
+          loadHistory(); // Refresh history
+        } else {
+          showToast(TRANSLATIONS[lang].toastSaveError);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(TRANSLATIONS[lang].toastSaveNetworkError);
+      }
+    }
+    
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Sync UI values into our JS State object
+    function syncState() {
+      currentData.salary = parseFloat(inputSalary.value) || 0;
+      currentData.bonus = parseFloat(inputBonus.value) || 0;
+      currentData.unplanned_bonus = parseFloat(inputUnplannedBonus.value) || 0;
+      currentData.kurs = parseFloat(inputKurs.value) || 12050;
+      currentData.avans = parseFloat(inputAvans.value) || 0;
+      currentData.card_transfer = parseFloat(inputCardTransfer.value) || 0;
+      currentData.calc_method = 'proportional';
+    }
+    
+    function syncAndRecalculate() {
+      syncState();
+      calculateTotals();
+      triggerAutosave();
+    }
+    
+    // Generate the table rows
+    function renderTable() {
+      tableBody.innerHTML = '';
+      
+      const year = parseInt(yearSelect.value);
+      const month = parseInt(monthSelect.value) - 1; // JS months are 0-11
+      
+      const numDays = new Date(year, month + 1, 0).getDate();
+      
+      for (let day = 1; day <= numDays; day++) {
+        const dateObj = new Date(year, month, day);
+        let wday = dateObj.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        let uzWday = wday === 0 ? 6 : wday - 1;
+        
+        const isSunday = (wday === 0);
+        const isSaturday = (wday === 6);
+        
+        let rowClass = '';
+        if (isSunday) rowClass = 'weekend-sun';
+        else if (isSaturday) rowClass = 'weekend-sat';
+        
+        if (!currentData.days[day]) {
+          let planHours = 9.0;
+          if (isSunday) planHours = 0.0;
+          else if (isSaturday) planHours = 8.0;
+          
+          currentData.days[day] = {
+            keldi: "",
+            ketdi: "",
+            plan: planHours
+          };
+        }
+        
+        const dObj = currentData.days[day];
+        const daysArr = langSelect.value === 'ru'
+          ? ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
+          : ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'];
+          
+        const daysShortArr = langSelect.value === 'ru'
+          ? ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+          : ['Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha', 'Ya'];
+          
+        const dayOfWeekName = daysArr[uzWday];
+        const dayOfWeekShort = daysShortArr[uzWday];
+        
+        const tr = document.createElement('tr');
+        tr.className = rowClass;
+        tr.dataset.day = day;
+        
+        tr.innerHTML = `
+          <td><span class="day-badge">${day}</span></td>
+          <td><span style="font-weight:600;">${dayOfWeekName}</span> <span style="color:var(--muted); font-size:12px;">(${dayOfWeekShort})</span></td>
+          <td><input type="time" class="time-input arrival-input" value="${dObj.keldi || ''}"></td>
+          <td><input type="time" class="time-input departure-input" value="${dObj.ketdi || ''}"></td>
+          <td style="text-align: center;"><input type="number" step="0.5" class="num-input plan-input" value="${dObj.plan}"></td>
+          <td style="text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 700;" class="actual-hours-cell">0.00</td>
+          <td style="text-align: center; font-family: 'JetBrains Mono', monospace;" class="diff-hours-cell">0.00</td>
+          <td style="text-align: center;">
+            <div class="row-actions">
+              <button class="action-btn set-std-row-btn" title="Заполнить стандарт">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <button class="action-btn holiday-row-btn ${dObj.is_holiday ? 'active' : ''}" title="Праздничный день 🎊 (План = 0)">
+                <svg width="14" height="14" viewBox="10 0 128 148" fill="currentColor"><path d="M123.62,12.91h-7.87v14.11c.52.88.81,1.91.81,3,0,3.33-2.7,6.03-6.02,6.03s-6.02-2.7-6.02-6.03c0-1.09.29-2.12.8-3v-14.11h-63.07v14.11c.52.88.81,1.91.81,3,0,3.33-2.7,6.03-6.02,6.03s-6.02-2.7-6.02-6.03c0-1.09.29-2.12.8-3v-14.11h-7.87c-11.23,0-20.33,9.1-20.33,20.33v99.67c0,11.23,9.1,20.33,20.33,20.33h99.67c11.23,0,20.34-9.1,20.34-20.33V33.24c0-11.23-9.11-20.33-20.34-20.33ZM130.05,38.01c0-.59.48-1.06,1.06-1.06h2.46c.59,0,1.06.47,1.06,1.06v2.46c0,.59-.47,1.06-1.06,1.06h-2.46c-.58,0-1.06-.47-1.06-1.06v-2.46ZM130.05,43.59c0-.58.48-1.06,1.06-1.06h2.46c.59,0,1.06.48,1.06,1.06v2.46c0,.59-.47,1.06-1.06,1.06h-2.46c-.58,0-1.06-.47-1.06-1.06v-2.46ZM130.05,49.51c0-.59.48-1.06,1.06-1.06h2.46c.59,0,1.06.47,1.06,1.06v2.46c0,.59-.47,1.06-1.06,1.06h-2.46c-.58,0-1.06-.47-1.06-1.06v-2.46ZM124.47,38.01c0-.59.47-1.06,1.06-1.06h2.46c.59,0,1.06.47,1.06,1.06v2.46c0,.59-.47,1.06-1.06,1.06h-2.46c-.59,0-1.06-.47-1.06-1.06v-2.46ZM127.99,53.03h-2.46c-.59,0-1.06-.47-1.06-1.06v-2.46c0-.59.47-1.06,1.06-1.06h2.46c.59,0,1.06.47,1.06,1.06v2.46c0,.59-.47,1.06-1.06,1.06ZM129.05,55.43v2.46c0,.58-.47,1.06-1.06,1.06h-2.46c-.59,0-1.06-.48-1.06-1.06v-2.46c0-.59.47-1.07,1.06-1.07h2.46c.59,0,1.06.48,1.06,1.07ZM124.4,43.59c0-.58.48-1.06,1.07-1.06h2.45c.59,0,1.07.48,1.07,1.06v2.46c0,.59-.48,1.06-1.07,1.06h-2.45c-.59,0-1.07-.47-1.07-1.06v-2.46ZM118.75,38.01c0-.59.48-1.06,1.07-1.06h2.46c.58,0,1.06.47,1.06,1.06v2.46c0,.59-.48,1.06-1.06,1.06h-2.46c-.59,0-1.07-.47-1.07-1.06v-2.46ZM118.75,43.59c0-.58.48-1.06,1.07-1.06h2.46c.58,0,1.06.48,1.06,1.06v2.46c0,.59-.48,1.06-1.06,1.06h-2.46c-.59,0-1.07-.47-1.07-1.06v-2.46ZM118.75,49.51c0-.59.48-1.06,1.07-1.06h2.46c.58,0,1.06.47,1.06,1.06v2.46c0,.59-.48,1.06-1.06,1.06h-2.46c-.59,0-1.07-.47-1.07-1.06v-2.46ZM118.75,55.43c0-.59.48-1.07,1.07-1.07h2.46c.58,0,1.06.48,1.06,1.07v2.46c0,.58-.48,1.06-1.06,1.06h-2.46c-.59,0-1.07-.48-1.07-1.06v-2.46ZM116.56,53.03h-2.46c-.58,0-1.06-.47-1.06-1.06v-2.46c0-.59.48-1.06,1.06-1.06h2.46c.59,0,1.07.47,1.07,1.06v2.46c0,.59-.48,1.06-1.07,1.06ZM117.63,55.43v2.46c0,.58-.48,1.06-1.07,1.06h-2.46c-.58,0-1.06-.48-1.06-1.06v-2.46c0-.59.48-1.07,1.06-1.07h2.46c.59,0,1.07.48,1.07,1.07ZM112.98,43.59c0-.58.47-1.06,1.06-1.06h2.46c.58,0,1.06.48,1.06,1.06v2.46c0,.59-.48,1.06-1.06,1.06h-2.46c-.59,0-1.06-.47-1.06-1.06v-2.46ZM107.33,43.59c0-.58.47-1.06,1.06-1.06h2.46c.59,0,1.06.48,1.06,1.06v2.46c0,.59-.47,1.06-1.06,1.06h-2.46c-.59,0-1.06-.47-1.06-1.06v-2.46ZM107.33,49.51c0-.59.47-1.06,1.06-1.06h2.46c.59,0,1.06.47,1.06,1.06v2.46c0,.59-.47,1.06-1.06,1.06h-2.46c-.59,0-1.06-.47-1.06-1.06v-2.46ZM107.33,55.43c0-.59.47-1.07,1.06-1.07h2.46c.59,0,1.06.48,1.06,1.07v2.46c0,.58-.47,1.06-1.06,1.06h-2.46c-.59,0-1.06-.48-1.06-1.06v-2.46ZM135.4,131.6c0,7.23-5.86,13.08-13.08,13.08H25.26c-7.23,0-13.08-5.85-13.08-13.08V62.91h123.22v68.69ZM33.24,3.39h7.6v28h-7.6zM106.74,3.39h7.6v28h-7.6z"/></svg>
+              </button>
+              <button class="action-btn clear-row-btn" title="Очистить">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        
+        tableBody.appendChild(tr);
+        
+        const arrivalInput = tr.querySelector('.arrival-input');
+        const departureInput = tr.querySelector('.departure-input');
+        const planInput = tr.querySelector('.plan-input');
+        
+        arrivalInput.addEventListener('input', () => {
+          currentData.days[day].keldi = arrivalInput.value;
+          calculateRow(tr, day);
+          calculateTotals();
+          triggerAutosave();
+        });
+        
+        departureInput.addEventListener('input', () => {
+          currentData.days[day].ketdi = departureInput.value;
+          calculateRow(tr, day);
+          calculateTotals();
+          triggerAutosave();
+        });
+        
+        planInput.addEventListener('input', () => {
+          currentData.days[day].plan = parseFloat(planInput.value) || 0;
+          calculateRow(tr, day);
+          calculateTotals();
+          triggerAutosave();
+        });
+        
+        const holidayBtn = tr.querySelector('.holiday-row-btn');
+        
+        tr.querySelector('.set-std-row-btn').addEventListener('click', () => {
+          if (isSunday) {
+            arrivalInput.value = '';
+            departureInput.value = '';
+            planInput.value = 0;
+          } else if (isSaturday) {
+            arrivalInput.value = '09:00';
+            departureInput.value = '17:00';
+            planInput.value = 8;
+          } else {
+            arrivalInput.value = '09:00';
+            departureInput.value = '18:00';
+            planInput.value = 9;
+          }
+          currentData.days[day].keldi = arrivalInput.value;
+          currentData.days[day].ketdi = departureInput.value;
+          currentData.days[day].plan = parseFloat(planInput.value);
+          currentData.days[day].is_holiday = false;
+          holidayBtn.classList.remove('active');
+          
+          calculateRow(tr, day);
+          calculateTotals();
+          triggerAutosave();
+        });
+        
+        holidayBtn.addEventListener('click', () => {
+          const isHolidayNow = !currentData.days[day].is_holiday;
+          currentData.days[day].is_holiday = isHolidayNow;
+          
+          if (isHolidayNow) {
+            planInput.value = 0;
+            currentData.days[day].plan = 0;
+            holidayBtn.classList.add('active');
+            showToast(`День ${day} отмечен как праздничный 🎊 (План = 0 ч)`);
+          } else {
+            let stdPlan = 9.0;
+            if (isSunday) stdPlan = 0.0;
+            else if (isSaturday) stdPlan = 8.0;
+            
+            planInput.value = stdPlan;
+            currentData.days[day].plan = stdPlan;
+            holidayBtn.classList.remove('active');
+            showToast(`День ${day} возвращен в обычный режим`);
+          }
+          
+          calculateRow(tr, day);
+          calculateTotals();
+          triggerAutosave();
+        });
+        
+        tr.querySelector('.clear-row-btn').addEventListener('click', () => {
+          arrivalInput.value = '';
+          departureInput.value = '';
+          currentData.days[day].keldi = '';
+          currentData.days[day].ketdi = '';
+          
+          calculateRow(tr, day);
+          calculateTotals();
+          triggerAutosave();
+        });
+        
+        calculateRow(tr, day);
+      }
+    }
+    
+    function calculateRow(rowElement, dayNum) {
+      const dObj = currentData.days[dayNum];
+      const actualCell = rowElement.querySelector('.actual-hours-cell');
+      const diffCell = rowElement.querySelector('.diff-hours-cell');
+      const dayBadge = rowElement.querySelector('.day-badge');
+      
+      const keldi = dObj.keldi;
+      const ketdi = dObj.ketdi;
+      const plan = dObj.plan;
+      
+      let worked = 0.0;
+      if (keldi && ketdi) {
+        const [aH, aM] = keldi.split(':').map(Number);
+        const [dH, dM] = ketdi.split(':').map(Number);
+        const aMin = aH * 60 + aM;
+        const dMin = dH * 60 + dM;
+        
+        if (dMin > aMin) {
+          worked = (dMin - aMin) / 60;
+        }
+      }
+      
+      const diff = worked > 0 ? (worked - plan) : 0.0;
+      
+      actualCell.textContent = worked.toFixed(2);
+      
+      if (diff > 0.01) {
+        diffCell.textContent = `+${diff.toFixed(2)}`;
+        diffCell.className = 'diff-hours-cell badge-status plus';
+      } else if (diff < -0.01) {
+        diffCell.textContent = `${diff.toFixed(2)}`;
+        diffCell.className = 'diff-hours-cell badge-status minus';
+      } else {
+        diffCell.textContent = '0.00';
+        diffCell.className = 'diff-hours-cell';
+      }
+      
+      // Determine day badge color based on attendance status
+      let badgeStatus = 'neutral-future';
+      
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth();
+      const currentDay = today.getDate();
+      
+      const year = parseInt(yearSelect.value);
+      const month = parseInt(monthSelect.value) - 1; // 0-11
+      
+      const isPastOrPresent = (year < currentYear) || 
+                              (year === currentYear && month < currentMonth) || 
+                              (year === currentYear && month === currentMonth && dayNum <= currentDay);
+      
+      const wday = new Date(year, month, dayNum).getDay(); // 0 = Sunday, 6 = Saturday
+      const isSunday = (wday === 0);
+      const isSaturday = (wday === 6);
+      
+      if (plan > 0) {
+        if (keldi && ketdi) {
+          if (keldi <= "09:00") {
+            badgeStatus = 'ontime';
+          } else {
+            badgeStatus = 'late';
+          }
+        } else if (isPastOrPresent) {
+          badgeStatus = 'absent';
+        }
+      } else {
+        // Off day (plan == 0)
+        if (keldi && ketdi) {
+          badgeStatus = 'ontime'; // worked on off day
+        } else {
+          badgeStatus = isSunday ? 'weekend-sun-status' : (isSaturday ? 'weekend-sat-status' : 'neutral-off');
+        }
+      }
+      
+      if (dayBadge) {
+        dayBadge.className = `day-badge ${badgeStatus}`;
+      }
+      
+      return { worked, plan, diff };
+    }
+       function calculateTotals() {
+      let totalPlan = 0.0;
+    let totalActual = 0.0;
+    let totalOvertime = 0.0;
+    let totalDebt = 0.0;
+    let totalExtra = 0.0;
+    
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    const currentDay = today.getDate();
+    
+    const year = parseInt(yearSelect.value);
+    const month = parseInt(monthSelect.value) - 1; // 0-11
+    
+    const rows = tableBody.querySelectorAll('tr');
+    rows.forEach(tr => {
+      const dayNum = parseInt(tr.dataset.day);
+      const dObj = currentData.days[dayNum];
+      
+      let worked = 0.0;
+      if (dObj.keldi && dObj.ketdi) {
+        const [aH, aM] = dObj.keldi.split(':').map(Number);
+        const [dH, dM] = dObj.ketdi.split(':').map(Number);
+        const aMin = aH * 60 + aM;
+        const dMin = dH * 60 + dM;
+        if (dMin > aMin) worked = (dMin - aMin) / 60;
+      }
+      
+      totalPlan += dObj.plan;
+      totalActual += worked;
+      
+      if (worked > 0) {
+        totalOvertime += (worked - dObj.plan);
+      } else if (dObj.plan > 0) {
+        totalOvertime += (0 - dObj.plan);
+      }
+      
+      // Calculate Debt (underworked hours on past or present days)
+      const isPastOrPresent = (year < currentYear) || 
+                              (year === currentYear && month < currentMonth) || 
+                              (year === currentYear && month === currentMonth && dayNum <= currentDay);
+                              
+      if (isPastOrPresent) {
+        if (worked < dObj.plan) {
+          totalDebt += (dObj.plan - worked);
+        }
+      }
+      
+      // Calculate positive extra hours worked (overtime per day)
+      if (worked > dObj.plan) {
+        totalExtra += (worked - dObj.plan);
+      }
+    });
+      
+      kpiPlan.textContent = totalPlan.toFixed(2);
+      kpiActual.textContent = totalActual.toFixed(2);
+      
+      if (totalOvertime > 0.01) {
+        kpiBalance.textContent = `+${totalOvertime.toFixed(2)}`;
+        kpiBalanceCard.style.setProperty('--accent-color', 'var(--teal)');
+        kpiBalance.className = 'k-val plus';
+      } else if (totalOvertime < -0.01) {
+        kpiBalance.textContent = `${totalOvertime.toFixed(2)}`;
+        kpiBalanceCard.style.setProperty('--accent-color', 'var(--rose)');
+        kpiBalance.className = 'k-val minus';
+      } else {
+        kpiBalance.textContent = '0.00';
+        kpiBalanceCard.style.setProperty('--accent-color', 'var(--line)');
+        kpiBalance.className = 'k-val';
+      }
+      
+      const salary = currentData.salary;
+      const bonus = currentData.bonus;
+      const unplannedBonus = currentData.unplanned_bonus || 0;
+      const kurs = currentData.kurs;
+      const avans = currentData.avans;
+      const cardTransfer = currentData.card_transfer || 0;
+      
+      let finalUSD = 0.0;
+      if (totalPlan > 0) {
+        finalUSD = (salary + bonus + unplannedBonus) / totalPlan * totalActual;
+      }
+      
+      const ratePerHour = totalPlan > 0 ? (salary + bonus + unplannedBonus) / totalPlan : 0;
+      const totalUZS = finalUSD * kurs;
+      const remainingUZS = totalUZS - avans - cardTransfer;
+      
+      const lang = langSelect.value;
+      const t = TRANSLATIONS[lang];
+      const bonusTxt = lang === 'ru' ? 'бонус' : 'bonus';
+      const unplannedBonusTxt = lang === 'ru' ? 'премия' : 'mukofot';
+      const hoursTxt = lang === 'ru' ? 'ч' : 'soat';
+      const sumTxt = lang === 'ru' ? 'сум' : 'so\'m';
+      
+      const breakdownHtml = `
+        <p><strong>${t.breakdownBase}:</strong> ${salary.toFixed(2)} + ${bonus.toFixed(2)} (${bonusTxt}) + ${unplannedBonus.toFixed(2)} (${unplannedBonusTxt}) = ${(salary+bonus+unplannedBonus).toFixed(2)} $</p>
+        <p><strong>${t.breakdownRate}:</strong> ${(salary+bonus+unplannedBonus).toFixed(2)} / ${totalPlan.toFixed(1)} ${hoursTxt} = <span>$${ratePerHour.toFixed(4)} / ${hoursTxt}</span></p>
+        <p><strong>${t.breakdownAccrued}:</strong> $${ratePerHour.toFixed(4)} * ${totalActual.toFixed(2)} ${hoursTxt} = <span>$${finalUSD.toFixed(2)}</span></p>
+        <p><strong>${t.breakdownInUzs}:</strong> $${finalUSD.toFixed(2)} * ${kurs} = <span>${Math.round(totalUZS).toLocaleString()} ${sumTxt}</span></p>
+        <p><strong>${t.breakdownMinusAvans}:</strong> -${avans.toLocaleString()} ${sumTxt}</p>
+        <p><strong>${t.breakdownMinusCard}:</strong> -${cardTransfer.toLocaleString()} ${sumTxt}</p>
+        <p><strong>${t.breakdownRemainingCash}:</strong> <span>${Math.round(remainingUZS).toLocaleString()} ${sumTxt}</span></p>
+      `;
+      
+      kpiDebt.textContent = `${totalDebt.toFixed(2)} ${hoursTxt}`;
+      kpiExtra.textContent = `+${totalExtra.toFixed(2)} ${hoursTxt}`;
+      
+      breakdownText.innerHTML = breakdownHtml;
+      
+      if (typeof renderMiniCalendar === 'function') {
+        renderMiniCalendar();
+      }
+      if (typeof updateSelectedDayCard === 'function') {
+        updateSelectedDayCard(selectedDay);
+      }
+    }
+
+    async function loadHistory() {
+      const historyTableBody = document.getElementById('historyTableBody');
+      try {
+        const res = await fetch('/api/history');
+        if (res.status === 401) {
+          loginOverlay.style.display = 'flex';
+          return;
+        }
+        const historyList = await res.json();
+        
+        historyTableBody.innerHTML = '';
+        
+        const lang = langSelect.value;
+        const t = TRANSLATIONS[lang];
+        if (historyList.length === 0) {
+          historyTableBody.innerHTML = `<tr><td colspan="3" style="color:var(--muted); text-align:center;">${t.historyNoEntries}</td></tr>`;
+          return;
+        }
+        
+        historyList.forEach(item => {
+          const [year, month] = item.year_month.split('-');
+          const label = `${t.mcTitleMonths[parseInt(month) - 1]} ${year}`;
+          
+          const tr = document.createElement('tr');
+          tr.style.cursor = 'pointer';
+          tr.title = t.historyTooltip;
+          
+          const hoursUnit = lang === 'ru' ? 'ч' : 'soat';
+          const sumUnit = lang === 'ru' ? 'сум' : 'so\'m';
+          tr.innerHTML = `
+            <td><strong style="color:var(--amber);">${label}</strong></td>
+            <td style="text-align: right; font-family: 'JetBrains Mono', monospace;">${item.total_actual} ${hoursUnit}</td>
+            <td style="text-align: right; font-family: 'JetBrains Mono', monospace; font-weight:700;">${item.remaining_cash.toLocaleString()} ${sumUnit}</td>
+          `;
+          
+          tr.addEventListener('click', () => {
+            yearSelect.value = year;
+            monthSelect.value = month;
+            loadMonthData();
+          });
+          
+          historyTableBody.appendChild(tr);
+        });
+        
+        if (isHistoryExpanded) {
+          const historyContent = document.getElementById('historyContent');
+          historyContent.style.maxHeight = historyContent.scrollHeight + "px";
+        }
+      } catch (err) {
+        console.error("Failed to load history list", err);
+      }
+    }
+    
+    function toggleHistoryAccordion() {
+      const historyContent = document.getElementById('historyContent');
+      const historyChevron = document.getElementById('historyChevron');
+      
+      if (isHistoryExpanded) {
+        historyContent.style.maxHeight = historyContent.scrollHeight + "px";
+        historyContent.style.marginTop = "12px";
+        historyChevron.style.transform = "rotate(180deg)";
+      } else {
+        historyContent.style.maxHeight = "0";
+        historyContent.style.marginTop = "0";
+        historyChevron.style.transform = "rotate(0deg)";
+      }
+    }
+    
+    function toggleFinanceAccordion(animate = true) {
+      const financeContent = document.getElementById('financeContent');
+      const financeChevron = document.getElementById('financeChevron');
+      
+      if (!animate) {
+        financeContent.style.transition = 'none';
+      }
+      
+      if (isFinanceExpanded) {
+        financeContent.style.maxHeight = financeContent.scrollHeight + "px";
+        financeContent.style.marginTop = "12px";
+        financeChevron.style.transform = "rotate(180deg)";
+        if (animate) {
+          setTimeout(() => {
+            if (isFinanceExpanded) financeContent.style.maxHeight = 'none';
+          }, 300);
+        } else {
+          financeContent.style.maxHeight = 'none';
+        }
+      } else {
+        if (animate) {
+          financeContent.style.maxHeight = financeContent.scrollHeight + "px";
+          financeContent.offsetHeight; // Force reflow
+        }
+        financeContent.style.maxHeight = "0";
+        financeContent.style.marginTop = "0";
+        financeChevron.style.transform = "rotate(0deg)";
+      }
+      
+      if (!animate) {
+        financeContent.offsetHeight;
+        financeContent.style.transition = 'max-height 0.3s ease-out, margin-top 0.3s';
+      }
+    }
+    
+    function fillStandardTimes(type, start, end) {
+      const rows = tableBody.querySelectorAll('tr');
+      rows.forEach(tr => {
+        const day = parseInt(tr.dataset.day);
+        const dateObj = new Date(parseInt(yearSelect.value), parseInt(monthSelect.value) - 1, day);
+        const wday = dateObj.getDay();
+        
+        const isSunday = (wday === 0);
+        const isSaturday = (wday === 6);
+        const isWeekday = (!isSunday && !isSaturday);
+        
+        if (type === 'weekday' && isWeekday) {
+          const arrivalInput = tr.querySelector('.arrival-input');
+          const departureInput = tr.querySelector('.departure-input');
+          const planInput = tr.querySelector('.plan-input');
+          arrivalInput.value = start;
+          departureInput.value = end;
+          planInput.value = 9;
+          currentData.days[day].keldi = start;
+          currentData.days[day].ketdi = end;
+          currentData.days[day].plan = 9;
+          currentData.days[day].is_holiday = false;
+          tr.querySelector('.holiday-row-btn').classList.remove('active');
+          calculateRow(tr, day);
+        } else if (type === 'saturday' && isSaturday) {
+          const arrivalInput = tr.querySelector('.arrival-input');
+          const departureInput = tr.querySelector('.departure-input');
+          const planInput = tr.querySelector('.plan-input');
+          arrivalInput.value = start;
+          departureInput.value = end;
+          planInput.value = 8;
+          currentData.days[day].keldi = start;
+          currentData.days[day].ketdi = end;
+          currentData.days[day].plan = 8;
+          currentData.days[day].is_holiday = false;
+          tr.querySelector('.holiday-row-btn').classList.remove('active');
+          calculateRow(tr, day);
+        }
+      });
+      calculateTotals();
+      triggerAutosave();
+      const lang = langSelect.value;
+      const t = TRANSLATIONS[lang];
+      if (type === 'weekday') {
+        showToast(`${t.toastWeekdaysFilled} ${start} - ${end}`);
+      } else {
+        showToast(`${t.toastSaturdaysFilled} ${start} - ${end}`);
+      }
+    }
+    
+    function clearAllTimes() {
+      const rows = tableBody.querySelectorAll('tr');
+      rows.forEach(tr => {
+        const day = parseInt(tr.dataset.day);
+        const arrivalInput = tr.querySelector('.arrival-input');
+        const departureInput = tr.querySelector('.departure-input');
+        arrivalInput.value = '';
+        departureInput.value = '';
+        currentData.days[day].keldi = '';
+        currentData.days[day].ketdi = '';
+        calculateRow(tr, day);
+      });
+      calculateTotals();
+      triggerAutosave();
+      showToast(TRANSLATIONS[langSelect.value].toastCleared);
+    }
+    let autosaveTimeout = null;
+    
+    function triggerAutosave() {
+      const saveStatusDot = document.getElementById('saveStatusDot');
+      const saveStatusText = document.getElementById('saveStatusText');
+      const lang = langSelect.value;
+      const t = TRANSLATIONS[lang];
+      
+      saveStatusDot.style.background = 'var(--amber)';
+      saveStatusText.textContent = t.saveStatusSaving;
+      
+      if (autosaveTimeout) clearTimeout(autosaveTimeout);
+      
+      autosaveTimeout = setTimeout(async () => {
+        const ym = `${yearSelect.value}-${monthSelect.value}`;
+        syncState();
+        
+        const payload = {
+          year_month: ym,
+          ...currentData
+        };
+        
+        try {
+          const res = await fetch('/api/schedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.status === 401) {
+            loginOverlay.style.display = 'flex';
+            return;
+          }
+          const result = await res.json();
+          if (result.success) {
+            saveStatusDot.style.background = 'var(--teal)';
+            saveStatusText.textContent = t.saveStatusSaved;
+            loadHistory();
+          } else {
+            saveStatusDot.style.background = 'var(--rose)';
+            saveStatusText.textContent = t.saveStatusError;
+          }
+        } catch (err) {
+          console.error("Autosave failed", err);
+          saveStatusDot.style.background = 'var(--rose)';
+          saveStatusText.textContent = t.saveStatusNetworkError;
+        }
+      }, 1200);
+    }
+    
+    function navigateMonth(offset) {
+      let m = parseInt(monthSelect.value);
+      let y = parseInt(yearSelect.value);
+      
+      m += offset;
+      if (m < 1) {
+        m = 12;
+        y -= 1;
+      } else if (m > 12) {
+        m = 1;
+        y += 1;
+      }
+      
+      monthSelect.value = m.toString().padStart(2, '0');
+      yearSelect.value = y.toString();
+      loadMonthData();
+    }
+    
+    function renderMiniCalendar() {
+      if (!mcGrid) return;
+      mcGrid.innerHTML = '';
+      
+      const year = parseInt(yearSelect.value);
+      const month = parseInt(monthSelect.value) - 1; // 0-11
+      
+      const lang = langSelect.value;
+      const t = TRANSLATIONS[lang];
+      mcTitle.textContent = `${t.mcTitleMonths[month]} ${year}`;
+      
+      // First day of selected month
+      let firstDate = new Date(year, month, 1);
+      let startWday = firstDate.getDay(); // 0 = Sun, 1 = Mon ...
+      // Convert to Mon=0, Sun=6
+      startWday = startWday === 0 ? 6 : startWday - 1;
+      
+      // Days in current month
+      const numDays = new Date(year, month + 1, 0).getDate();
+      
+      // Days in previous month
+      const prevNumDays = new Date(year, month, 0).getDate();
+      
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth();
+      const currentDay = today.getDate();
+      
+      const totalCells = 42;
+      
+      // 1. Previous month overlapping days
+      for (let i = startWday - 1; i >= 0; i--) {
+        const d = prevNumDays - i;
+        const cell = document.createElement('div');
+        cell.className = 'mc-cell other-month';
+        cell.textContent = d.toString().padStart(2, '0');
+        mcGrid.appendChild(cell);
+      }
+      
+      // 2. Current month days
+      for (let d = 1; d <= numDays; d++) {
+        const cell = document.createElement('div');
+        cell.textContent = d.toString().padStart(2, '0');
+        
+        const dateObj = new Date(year, month, d);
+        const wday = dateObj.getDay(); // 0 = Sun, 6 = Sat
+        
+        const isSunday = (wday === 0);
+        const isSaturday = (wday === 6);
+        const isToday = (year === currentYear && month === currentMonth && d === currentDay);
+        
+        let cellClass = 'mc-cell ';
+        let status = 'neutral-future'; // default
+        
+        const dData = currentData.days[d];
+        if (dData) {
+          const keldi = dData.keldi;
+          const ketdi = dData.ketdi;
+          const plan = dData.plan;
+          
+          const isPastOrPresent = (year < currentYear) || 
+                                  (year === currentYear && month < currentMonth) || 
+                                  (year === currentYear && month === currentMonth && d <= currentDay);
+          
+          if (plan > 0) {
+            if (keldi && ketdi) {
+              if (keldi <= "09:00") {
+                status = 'ontime';
+              } else {
+                status = 'late';
+              }
+            } else {
+              if (isPastOrPresent) {
+                status = 'absent';
+              } else {
+                status = 'neutral-future';
+              }
+            }
+          } else {
+            // Day off (plan === 0)
+            if (keldi && ketdi) {
+              if (keldi <= "09:00") {
+                status = 'ontime';
+              } else {
+                status = 'late';
+              }
+            } else {
+              status = 'weekend-off';
+            }
+          }
+        }
+        
+        cell.className = cellClass + status;
+        
+        if (isToday) {
+          cell.classList.add('today-selected');
+        }
+        
+        if (d === selectedDay) {
+          cell.classList.add('selected-day');
+        }
+        
+        // Click action: select day and update card, no scroll jumping
+        cell.addEventListener('click', () => {
+          selectedDay = d;
+          renderMiniCalendar();
+          updateSelectedDayCard(d);
+        });
+        
+        mcGrid.appendChild(cell);
+      }
+      
+      // 3. Next month overlapping days
+      const renderedCount = startWday + numDays;
+      const remaining = totalCells - renderedCount;
+      for (let d = 1; d <= remaining; d++) {
+        const cell = document.createElement('div');
+        cell.className = 'mc-cell other-month';
+        cell.textContent = d.toString().padStart(2, '0');
+        mcGrid.appendChild(cell);
+      }
+    }
+    
+    function updateSelectedDayCard(d) {
+      const mcSelArrival = document.getElementById('mcSelArrival');
+      const mcSelDeparture = document.getElementById('mcSelDeparture');
+      
+      const dData = currentData.days[d];
+      if (dData && dData.keldi) {
+        mcSelArrival.textContent = dData.keldi;
+      } else {
+        mcSelArrival.textContent = '--:--';
+      }
+      
+      if (dData && dData.ketdi) {
+        mcSelDeparture.textContent = dData.ketdi;
+      } else {
+        mcSelDeparture.textContent = '--:--';
+      }
+    }
+  </script>
+</body>
+</html>
