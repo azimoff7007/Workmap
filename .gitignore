@@ -1,0 +1,14 @@
+# Databases
+schedule_db.json
+users_db.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local spreadsheets
+*.xlsx
+
+# Local environment / run scripts
+run.bat
+.env
