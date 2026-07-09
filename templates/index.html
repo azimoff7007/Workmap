@@ -2408,18 +2408,18 @@
       const totalUZS = finalUSD * kurs;
       const remainingUZS = totalUZS - avans - cardTransfer;
       
-      const netPayout = totalUZS - avans;
-      const finalSalaryVal = document.getElementById('finalSalaryVal');
-      if (finalSalaryVal) {
-        finalSalaryVal.textContent = `${Math.round(netPayout).toLocaleString()} ${sumTxt}`;
-      }
-      
       const lang = langSelect.value;
       const t = TRANSLATIONS[lang];
       const bonusTxt = lang === 'ru' ? 'бонус' : 'bonus';
       const unplannedBonusTxt = lang === 'ru' ? 'премия' : 'mukofot';
       const hoursTxt = lang === 'ru' ? 'ч' : 'soat';
       const sumTxt = lang === 'ru' ? 'сум' : 'so\'m';
+      
+      const netPayout = totalUZS - avans;
+      const finalSalaryVal = document.getElementById('finalSalaryVal');
+      if (finalSalaryVal) {
+        finalSalaryVal.textContent = `${Math.round(netPayout).toLocaleString()} ${sumTxt}`;
+      }
       
       const breakdownHtml = `
         <p><strong>${t.breakdownBase}:</strong> ${salary.toFixed(2)} + ${bonus.toFixed(2)} (${bonusTxt}) + ${unplannedBonus.toFixed(2)} (${unplannedBonusTxt}) = ${(salary+bonus+unplannedBonus).toFixed(2)} $</p>
