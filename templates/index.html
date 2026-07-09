@@ -1246,6 +1246,15 @@
       calc_method: 'proportional'
     };
     
+    function isOldScheduleActive() {
+      const yearSelect = document.getElementById('yearSelect');
+      const monthSelect = document.getElementById('monthSelect');
+      if (!yearSelect || !monthSelect) return false;
+      const year = parseInt(yearSelect.value);
+      const month = parseInt(monthSelect.value);
+      return (year < 2026) || (year === 2026 && month < 7);
+    }
+    
     let isHistoryExpanded = false;
     let isFinanceExpanded = localStorage.getItem('financeExpanded') !== 'false';
     let selectedDay = 1;
@@ -1756,7 +1765,10 @@
       inputKurs.addEventListener('input', syncAndRecalculate);
       inputAvans.addEventListener('input', syncAndRecalculate);
       inputCardTransfer.addEventListener('input', syncAndRecalculate);
-      document.getElementById('fillWeekdaysBtn').addEventListener('click', () => fillStandardTimes('weekday', '09:00', '18:00'));
+      document.getElementById('fillWeekdaysBtn').addEventListener('click', () => {
+        const start = isOldScheduleActive() ? '08:00' : '09:00';
+        fillStandardTimes('weekday', start, '18:00');
+      });
       document.getElementById('fillSaturdaysBtn').addEventListener('click', () => fillStandardTimes('saturday', '09:00', '17:00'));
       document.getElementById('clearAllBtn').addEventListener('click', clearAllTimes);
       
@@ -1896,7 +1908,11 @@
       document.getElementById('selDepartureLbl').textContent = t.lblDeparture;
       
       // Action buttons
-      document.getElementById('fillWeekdaysBtn').textContent = t.btnFillWeekdays;
+      if (isOldScheduleActive()) {
+        document.getElementById('fillWeekdaysBtn').textContent = lang === 'ru' ? 'Будни (08:00 - 18:00)' : 'Ish kunlari (08:00 - 18:00)';
+      } else {
+        document.getElementById('fillWeekdaysBtn').textContent = t.btnFillWeekdays;
+      }
       document.getElementById('fillSaturdaysBtn').textContent = t.btnFillSaturdays;
       document.getElementById('clearAllBtn').textContent = t.btnClearAll;
       
@@ -1958,6 +1974,7 @@
         
         renderTable();
         calculateTotals();
+        applyLanguage();
         
         // Reset status to green
         const lang = langSelect.value;
@@ -2051,7 +2068,7 @@
         else if (isSaturday) rowClass = 'weekend-sat';
         
         if (!currentData.days[day]) {
-          let planHours = 9.0;
+          let planHours = isOldScheduleActive() ? 10.0 : 9.0;
           if (isSunday) planHours = 0.0;
           else if (isSaturday) planHours = 8.0;
           
@@ -2140,9 +2157,11 @@
             departureInput.value = '17:00';
             planInput.value = 8;
           } else {
-            arrivalInput.value = '09:00';
+            const start = isOldScheduleActive() ? '08:00' : '09:00';
+            const plan = isOldScheduleActive() ? 10.0 : 9.0;
+            arrivalInput.value = start;
             departureInput.value = '18:00';
-            planInput.value = 9;
+            planInput.value = plan;
           }
           currentData.days[day].keldi = arrivalInput.value;
           currentData.days[day].ketdi = departureInput.value;
@@ -2165,7 +2184,7 @@
             holidayBtn.classList.add('active');
             showToast(`День ${day} отмечен как праздничный 🎊 (План = 0 ч)`);
           } else {
-            let stdPlan = 9.0;
+            let stdPlan = isOldScheduleActive() ? 10.0 : 9.0;
             if (isSunday) stdPlan = 0.0;
             else if (isSaturday) stdPlan = 8.0;
             
@@ -2512,12 +2531,13 @@
           const arrivalInput = tr.querySelector('.arrival-input');
           const departureInput = tr.querySelector('.departure-input');
           const planInput = tr.querySelector('.plan-input');
+          const planVal = isOldScheduleActive() ? 10.0 : 9.0;
           arrivalInput.value = start;
           departureInput.value = end;
-          planInput.value = 9;
+          planInput.value = planVal;
           currentData.days[day].keldi = start;
           currentData.days[day].ketdi = end;
-          currentData.days[day].plan = 9;
+          currentData.days[day].plan = planVal;
           currentData.days[day].is_holiday = false;
           tr.querySelector('.holiday-row-btn').classList.remove('active');
           calculateRow(tr, day);
