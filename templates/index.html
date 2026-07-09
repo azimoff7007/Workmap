@@ -1030,14 +1030,14 @@
         <!-- Sidebar Controls -->
         <section class="panel" style="padding: 16px 20px;">
           <div class="panel-title" id="financeHeader" style="cursor: pointer; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; user-select: none;">
-            <span>Финансовые Настройки</span>
+            <span data-i18n="finSettingsTitle">Финансовые Настройки</span>
             <svg id="financeChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s; transform: rotate(180deg); color: var(--muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </div>
           
           <div id="financeContent" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, margin-top 0.3s; margin-top: 0;">
             <div style="height: 12px;"></div>
             <div class="form-group">
-              <label for="inputSalary">Базовый оклад, USD</label>
+              <label for="inputSalary" data-i18n="lblSalary">Базовый оклад, USD</label>
               <div class="input-wrapper">
                 <span class="input-prefix">$</span>
                 <input type="number" id="inputSalary" class="form-control has-prefix" value="0" step="50" placeholder="0">
@@ -1045,7 +1045,7 @@
             </div>
             
             <div class="form-group">
-              <label for="inputBonus">Запланированный бонус, USD</label>
+              <label for="inputBonus" data-i18n="lblBonus">Запланированный бонус, USD</label>
               <div class="input-wrapper">
                 <span class="input-prefix">$</span>
                 <input type="number" id="inputBonus" class="form-control has-prefix" value="0" step="50" placeholder="0">
@@ -1053,7 +1053,7 @@
             </div>
     
             <div class="form-group">
-              <label for="inputUnplannedBonus">Незапланированный бонус, USD</label>
+              <label for="inputUnplannedBonus" data-i18n="lblUnplannedBonus">Незапланированный бонус, USD</label>
               <div class="input-wrapper">
                 <span class="input-prefix">$</span>
                 <input type="number" id="inputUnplannedBonus" class="form-control has-prefix" value="0" step="50" placeholder="0">
@@ -1061,7 +1061,7 @@
             </div>
 
             <div class="form-group">
-              <label for="inputCardTransfer">Перевод на карту, UZS</label>
+              <label for="inputCardTransfer" data-i18n="lblCardTransfer">Перевод на карту, UZS</label>
               <div class="input-wrapper">
                 <span class="input-prefix">сум</span>
                 <input type="number" id="inputCardTransfer" class="form-control has-prefix-uzs" value="0" step="100000" placeholder="0">
@@ -1069,7 +1069,7 @@
             </div>
             
             <div class="form-group">
-              <label for="inputAvans">Полученный аванс, UZS</label>
+              <label for="inputAvans" data-i18n="lblAvans">Полученный аванс, UZS</label>
               <div class="input-wrapper">
                 <span class="input-prefix">сум</span>
                 <input type="number" id="inputAvans" class="form-control has-prefix-uzs" value="0" step="100000" placeholder="0">
@@ -1077,7 +1077,7 @@
             </div>
             
             <div class="form-group">
-              <label for="inputKurs">Курс валюты (USD/UZS)</label>
+              <label for="inputKurs" data-i18n="lblKurs">Курс валюты (USD/UZS)</label>
               <div class="input-wrapper">
                 <span class="input-prefix">сум</span>
                 <input type="number" id="inputKurs" class="form-control has-prefix-uzs" value="" step="50" placeholder="Загрузка...">
@@ -1086,7 +1086,7 @@
             
             <!-- Interactive Formula Breakdown -->
             <div class="calc-explain" id="formulaBreakdown">
-              <h4>Детализация расчета:</h4>
+              <h4 data-i18n="breakdownTitle">Детализация расчета:</h4>
               <div id="breakdownText"></div>
             </div>
           </div>
