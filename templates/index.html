@@ -1071,7 +1071,7 @@
               <label for="inputSalary" data-i18n="lblSalary">Базовый оклад, USD</label>
               <div class="input-wrapper">
                 <span class="input-prefix">$</span>
-                <input type="number" id="inputSalary" class="form-control has-prefix" value="0" step="50" placeholder="0">
+                <input type="text" inputmode="decimal" id="inputSalary" class="form-control has-prefix" value="0" placeholder="0">
               </div>
             </div>
             
@@ -1079,7 +1079,7 @@
               <label for="inputBonus" data-i18n="lblBonus">Запланированный бонус, USD</label>
               <div class="input-wrapper">
                 <span class="input-prefix">$</span>
-                <input type="number" id="inputBonus" class="form-control has-prefix" value="0" step="50" placeholder="0">
+                <input type="text" inputmode="decimal" id="inputBonus" class="form-control has-prefix" value="0" placeholder="0">
               </div>
             </div>
     
@@ -1087,7 +1087,7 @@
               <label for="inputUnplannedBonus" data-i18n="lblUnplannedBonus">Незапланированный бонус, USD</label>
               <div class="input-wrapper">
                 <span class="input-prefix">$</span>
-                <input type="number" id="inputUnplannedBonus" class="form-control has-prefix" value="0" step="50" placeholder="0">
+                <input type="text" inputmode="decimal" id="inputUnplannedBonus" class="form-control has-prefix" value="0" placeholder="0">
               </div>
             </div>
 
@@ -1095,7 +1095,7 @@
               <label for="inputCardTransfer" data-i18n="lblCardTransfer">Перевод на карту, UZS</label>
               <div class="input-wrapper">
                 <span class="input-prefix">сум</span>
-                <input type="number" id="inputCardTransfer" class="form-control has-prefix-uzs" value="0" step="100000" placeholder="0">
+                <input type="text" inputmode="decimal" id="inputCardTransfer" class="form-control has-prefix-uzs" value="0" placeholder="0">
               </div>
             </div>
             
@@ -1103,7 +1103,7 @@
               <label for="inputAvans" data-i18n="lblAvans">Полученный аванс, UZS</label>
               <div class="input-wrapper">
                 <span class="input-prefix">сум</span>
-                <input type="number" id="inputAvans" class="form-control has-prefix-uzs" value="0" step="100000" placeholder="0">
+                <input type="text" inputmode="decimal" id="inputAvans" class="form-control has-prefix-uzs" value="0" placeholder="0">
               </div>
             </div>
             
@@ -1111,7 +1111,7 @@
               <label for="inputKurs" data-i18n="lblKurs">Курс валюты (USD/UZS)</label>
               <div class="input-wrapper">
                 <span class="input-prefix">сум</span>
-                <input type="number" id="inputKurs" class="form-control has-prefix-uzs" value="" step="50" placeholder="Загрузка...">
+                <input type="text" inputmode="decimal" id="inputKurs" class="form-control has-prefix-uzs" value="" placeholder="Загрузка...">
               </div>
             </div>
             
@@ -1751,6 +1751,8 @@
       checkAuth().then(loggedIn => {
         if (loggedIn) {
           applyLanguage();
+          loadMonthData();
+          loadHistory();
         }
       });
       
@@ -1938,8 +1940,6 @@
       });
       monthSelect.value = currentSelectedVal;
       
-      loadMonthData();
-      loadHistory();
     }
     
     // Fetch month details from API
@@ -2029,14 +2029,19 @@
       }, 3000);
     }
     
-    // Sync UI values into our JS State object
+    function cleanAndParseFloat(val) {
+      if (val === undefined || val === null) return 0;
+      const cleanVal = val.toString().replace(/,/g, '.').replace(/[^0-9.]/g, '');
+      return parseFloat(cleanVal) || 0;
+    }
+
     function syncState() {
-      currentData.salary = parseFloat(inputSalary.value) || 0;
-      currentData.bonus = parseFloat(inputBonus.value) || 0;
-      currentData.unplanned_bonus = parseFloat(inputUnplannedBonus.value) || 0;
-      currentData.kurs = parseFloat(inputKurs.value) || 12050;
-      currentData.avans = parseFloat(inputAvans.value) || 0;
-      currentData.card_transfer = parseFloat(inputCardTransfer.value) || 0;
+      currentData.salary = cleanAndParseFloat(inputSalary.value);
+      currentData.bonus = cleanAndParseFloat(inputBonus.value);
+      currentData.unplanned_bonus = cleanAndParseFloat(inputUnplannedBonus.value);
+      currentData.kurs = cleanAndParseFloat(inputKurs.value) || 12050;
+      currentData.avans = cleanAndParseFloat(inputAvans.value);
+      currentData.card_transfer = cleanAndParseFloat(inputCardTransfer.value);
       currentData.calc_method = 'proportional';
     }
     
@@ -2723,9 +2728,18 @@
                                   (year === currentYear && month < currentMonth) || 
                                   (year === currentYear && month === currentMonth && d <= currentDay);
           
+          let limitTime = "09:00";
+          if (isSaturday) {
+            limitTime = "09:00";
+          } else if (isSunday) {
+            limitTime = "00:00";
+          } else {
+            limitTime = isOldScheduleActive() ? "08:00" : "09:00";
+          }
+          
           if (plan > 0) {
             if (keldi && ketdi) {
-              if (keldi <= "09:00") {
+              if (keldi <= limitTime) {
                 status = 'ontime';
               } else {
                 status = 'late';
@@ -2740,7 +2754,7 @@
           } else {
             // Day off (plan === 0)
             if (keldi && ketdi) {
-              if (keldi <= "09:00") {
+              if (keldi <= limitTime) {
                 status = 'ontime';
               } else {
                 status = 'late';
