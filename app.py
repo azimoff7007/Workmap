@@ -265,9 +265,21 @@ def get_current_user():
     users = read_users()
     user_val = users.get(username)
     avatar = None
+    verifix_url = "https://app.verifix.com"
+    verifix_login = ""
+    verifix_has_password = False
     if isinstance(user_val, dict):
         avatar = user_val.get('avatar')
-    return jsonify({"username": username, "avatar": avatar})
+        verifix_url = user_val.get('verifix_url', verifix_url) or "https://app.verifix.com"
+        verifix_login = user_val.get('verifix_login', '')
+        verifix_has_password = bool(user_val.get('verifix_password'))
+    return jsonify({
+        "username": username,
+        "avatar": avatar,
+        "verifix_url": verifix_url,
+        "verifix_login": verifix_login,
+        "verifix_has_password": verifix_has_password
+    })
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
@@ -343,7 +355,12 @@ def update_profile():
             return jsonify({"success": False, "message": "Пароль должен быть не менее 4 символов"}), 400
         password_changed = True
         
-    something_changed = username_changed or password_changed or avatar_changed
+    verifix_url_sent = 'verifix_url' in data
+    verifix_login_sent = 'verifix_login' in data
+    verifix_password_sent = 'verifix_password' in data
+    
+    something_changed = (username_changed or password_changed or avatar_changed or 
+                         verifix_url_sent or verifix_login_sent or verifix_password_sent)
     
     # 1. Verification of current password
     credentials_changed = username_changed or password_changed
@@ -380,6 +397,13 @@ def update_profile():
         
     if avatar_changed:
         users[target_username]["avatar"] = data.get('avatar')
+        
+    if verifix_url_sent:
+        users[target_username]["verifix_url"] = data.get('verifix_url', '').strip()
+    if verifix_login_sent:
+        users[target_username]["verifix_login"] = data.get('verifix_login', '').strip()
+    if verifix_password_sent:
+        users[target_username]["verifix_password"] = data.get('verifix_password', '')
         
     # Save databases if anything changed
     if something_changed:
@@ -496,6 +520,275 @@ def get_history():
         })
         
     return jsonify(history)
+
+def extract_time_records_from_json(data):
+    import re
+    date_pat = re.compile(r'^(\d{2})\.(\d{2})\.(\d{4})$') # DD.MM.YYYY
+    date_iso_pat = re.compile(r'^(\d{4})-(\d{2})-(\d{2})$') # YYYY-MM-DD
+    time_pat = re.compile(r'^(\d{2}):(\d{2})$') # HH:MM
+    time_sec_pat = re.compile(r'^(\d{2}):(\d{2}):(\d{2})$') # HH:MM:SS
+    
+    records = []
+    
+    def walk(node):
+        if isinstance(node, list):
+            for item in node:
+                walk(item)
+        elif isinstance(node, dict):
+            found_date = None
+            found_times = []
+            for k, v in node.items():
+                if isinstance(v, str):
+                    v = v.strip()
+                    if date_pat.match(v) or date_iso_pat.match(v):
+                        found_date = v
+                    elif time_pat.match(v) or time_sec_pat.match(v):
+                        found_times.append(v[:5])
+            
+            if found_date and found_times:
+                for t in found_times:
+                    records.append((found_date, t))
+            else:
+                for v in node.values():
+                    walk(v)
+                    
+    walk(data)
+    return records
+
+def run_verifix_sync(verifix_url, verifix_login, verifix_password, year_month):
+    import urllib.request
+    import urllib.parse
+    import json
+    import hashlib
+    import re
+    from http.cookiejar import CookieJar
+    
+    try:
+        year, month = map(int, year_month.split('-'))
+    except:
+        return None, "Неверный формат месяца/года"
+        
+    _, num_days = calendar.monthrange(year, month)
+    begin_date = f"01.{month:02d}.{year}"
+    end_date = f"{num_days:02d}.{month:02d}.{year}"
+    
+    sha1_pwd = hashlib.sha1(verifix_password.encode('utf-8')).hexdigest()
+    
+    cj = CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
+    
+    login_url = f"{verifix_url.rstrip('/')}/b/biruni/s$log_in"
+    login_data = urllib.parse.urlencode({
+        'login': verifix_login,
+        'password': sha1_pwd,
+        'lang_code': 'ru'
+    }).encode('utf-8')
+    
+    req = urllib.request.Request(
+        login_url,
+        data=login_data,
+        headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    )
+    
+    try:
+        with opener.open(req, timeout=10) as resp:
+            resp_body = resp.read().decode('utf-8')
+            try:
+                res_json = json.loads(resp_body)
+            except:
+                return None, f"Ответ сервера Verifix не является JSON. Ответ: {resp_body[:200]}"
+                
+            if res_json.get('status') != 'logged_in':
+                err_msg = res_json.get('error') or res_json.get('message') or "Неверный логин или пароль"
+                return None, f"Ошибка авторизации Verifix: {err_msg}"
+    except urllib.error.HTTPError as he:
+        try:
+            err_body = he.read().decode('utf-8')
+            err_json = json.loads(err_body)
+            err_msg = err_json.get('error') or err_json.get('message') or str(he)
+        except:
+            err_msg = str(he)
+        return None, f"Ошибка HTTP при авторизации: {err_msg}"
+    except Exception as e:
+        return None, f"Не удалось подключиться к Verifix: {str(e)}"
+        
+    forms_to_try = [
+        'vhr/staff/track_list',
+        'vhr/attendance/track_list',
+        'vhr/staff/timesheet',
+        'vhr/attendance/attendance_list'
+    ]
+    
+    extracted_records = []
+    success_form = None
+    response_sample = ""
+    
+    for form_name in forms_to_try:
+        grid_url = f"{verifix_url.rstrip('/')}/b/biruni/t$grid"
+        grid_params = {
+            '_form': form_name,
+            'begin_date': begin_date,
+            'end_date': end_date
+        }
+        grid_data = urllib.parse.urlencode(grid_params).encode('utf-8')
+        
+        grid_req = urllib.request.Request(
+            grid_url,
+            data=grid_data,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        )
+        
+        try:
+            with opener.open(grid_req, timeout=10) as resp:
+                resp_body = resp.read().decode('utf-8')
+                response_sample = resp_body[:200]
+                try:
+                    res_json = json.loads(resp_body)
+                except:
+                    continue
+                
+                records = extract_time_records_from_json(res_json)
+                if records:
+                    extracted_records = records
+                    success_form = form_name
+                    break
+        except Exception as e:
+            print(f"Failed querying form {form_name}: {e}")
+            continue
+            
+    if not extracted_records:
+        for form_name in forms_to_try:
+            load_url = f"{verifix_url.rstrip('/')}/b/biruni/m$load"
+            load_params = {
+                '_form': form_name,
+                'begin_date': begin_date,
+                'end_date': end_date
+            }
+            load_data = urllib.parse.urlencode(load_params).encode('utf-8')
+            
+            load_req = urllib.request.Request(
+                load_url,
+                data=load_data,
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            )
+            
+            try:
+                with opener.open(load_req, timeout=10) as resp:
+                    resp_body = resp.read().decode('utf-8')
+                    try:
+                        res_json = json.loads(resp_body)
+                    except:
+                        continue
+                    
+                    records = extract_time_records_from_json(res_json)
+                    if records:
+                        extracted_records = records
+                        success_form = form_name
+                        break
+            except Exception as e:
+                print(f"Failed loading form {form_name}: {e}")
+                continue
+                
+    if not extracted_records:
+        return None, f"Авторизовано успешно, но не удалось найти данные посещаемости за период {begin_date} - {end_date} в Verifix. Ответ сервера: {response_sample}"
+        
+    date_pat = re.compile(r'^(\d{2})\.(\d{2})\.(\d{4})$') # DD.MM.YYYY
+    date_iso_pat = re.compile(r'^(\d{4})-(\d{2})-(\d{2})$') # YYYY-MM-DD
+    
+    day_records = {}
+    for d_str, t_str in extracted_records:
+        m = date_pat.match(d_str)
+        if m:
+            day_num = int(m.group(1))
+        else:
+            m = date_iso_pat.match(d_str)
+            if m:
+                day_num = int(m.group(3))
+            else:
+                continue
+        if day_num not in day_records:
+            day_records[day_num] = []
+        day_records[day_num].append(t_str)
+        
+    updated_days = {}
+    for day_num, times in day_records.items():
+        times = sorted(times)
+        keldi = times[0]
+        ketdi = times[-1] if len(times) > 1 else ""
+        updated_days[str(day_num)] = {
+            "keldi": keldi,
+            "ketdi": ketdi
+        }
+        
+    return updated_days, f"Использована форма {success_form}"
+
+@app.route('/api/verifix/sync', methods=['POST'])
+def verifix_sync():
+    username = session.get('username')
+    if not username:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data = request.get_json() or {}
+    year_month = data.get('year_month')
+    if not year_month:
+        return jsonify({"error": "Missing year_month parameter"}), 400
+        
+    users = read_users()
+    user_val = users.get(username)
+    if not isinstance(user_val, dict):
+        return jsonify({"error": "User profile not configured"}), 400
+        
+    verifix_url = user_val.get('verifix_url', 'https://app.verifix.com').strip()
+    verifix_login = user_val.get('verifix_login', '').strip()
+    verifix_password = user_val.get('verifix_password', '')
+    
+    if not verifix_login or not verifix_password:
+        return jsonify({"success": False, "message": "Настройки Verifix не заполнены в вашем профиле!"}), 400
+        
+    try:
+        updated_days, message = run_verifix_sync(verifix_url, verifix_login, verifix_password, year_month)
+        if updated_days is None:
+            return jsonify({"success": False, "message": message})
+            
+        user_data = get_user_data(username)
+        if year_month not in user_data:
+            user_data[year_month] = get_default_month_data(year_month, username)
+            
+        month_data = user_data[year_month]
+        days = month_data.get("days", {})
+        
+        count = 0
+        for d_str, times in updated_days.items():
+            if d_str in days:
+                days[d_str]["keldi"] = times["keldi"]
+                days[d_str]["ketdi"] = times["ketdi"]
+                count += 1
+                
+        month_data["days"] = days
+        user_data[year_month] = month_data
+        write_user_data(username, user_data)
+        
+        return jsonify({
+            "success": True, 
+            "message": f"Успешно импортировано из Verifix! Обновлено дней: {count}. ({message})",
+            "days": days
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "message": f"Ошибка синхронизации: {str(e)}"}), 500
 
 def open_browser():
     webbrowser.open_new("http://localhost:5000")
