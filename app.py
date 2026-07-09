@@ -380,12 +380,14 @@ def update_profile():
             "password": user_info,
             "avatar": None
         }
+        users[target_username] = user_info
         
     if username_changed:
         target_username = new_username
         # Copy to new username key
         users[new_username] = user_info
-        del users[current_user]
+        if current_user in users:
+            del users[current_user]
         
         # Copy schedule to new key
         if current_user in db:
