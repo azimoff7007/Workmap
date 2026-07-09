@@ -2270,9 +2270,18 @@
       const isSunday = (wday === 0);
       const isSaturday = (wday === 6);
       
+      let limitTime = "09:00";
+      if (isSaturday) {
+        limitTime = "09:00";
+      } else if (isSunday) {
+        limitTime = "00:00";
+      } else {
+        limitTime = isOldScheduleActive() ? "08:00" : "09:00";
+      }
+      
       if (plan > 0) {
         if (keldi && ketdi) {
-          if (keldi <= "09:00") {
+          if (keldi <= limitTime) {
             badgeStatus = 'ontime';
           } else {
             badgeStatus = 'late';
