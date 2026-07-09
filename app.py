@@ -732,35 +732,7 @@ def run_verifix_sync(verifix_url, verifix_login, verifix_password, year_month):
     if not updated_days:
         return None, f"Авторизовано успешно, но не удалось найти данные посещаемости за период {begin_date} - {end_date} в Verifix."
         
-    date_pat = re.compile(r'^(\d{2})\.(\d{2})\.(\d{4})$') # DD.MM.YYYY
-    date_iso_pat = re.compile(r'^(\d{4})-(\d{2})-(\d{2})$') # YYYY-MM-DD
-    
-    day_records = {}
-    for d_str, t_str in extracted_records:
-        m = date_pat.match(d_str)
-        if m:
-            day_num = int(m.group(1))
-        else:
-            m = date_iso_pat.match(d_str)
-            if m:
-                day_num = int(m.group(3))
-            else:
-                continue
-        if day_num not in day_records:
-            day_records[day_num] = []
-        day_records[day_num].append(t_str)
-        
-    updated_days = {}
-    for day_num, times in day_records.items():
-        times = sorted(times)
-        keldi = times[0]
-        ketdi = times[-1] if len(times) > 1 else ""
-        updated_days[str(day_num)] = {
-            "keldi": keldi,
-            "ketdi": ketdi
-        }
-        
-    return updated_days, f"Использована форма {success_form}"
+    return updated_days, "Успешно извлечено через форму dashboard:table"
 
 @app.route('/api/verifix/sync', methods=['POST'])
 def verifix_sync():
