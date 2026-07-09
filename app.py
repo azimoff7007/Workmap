@@ -563,16 +563,36 @@ def run_verifix_sync(verifix_url, verifix_login, verifix_password, year_month):
     import json
     import hashlib
     import re
+    import datetime
     from http.cookiejar import CookieJar
+    
+    debug_logs = []
+    def log_debug(msg):
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        debug_logs.append(f"[{timestamp}] {msg}")
+        print(f"[VERIFIX_SYNC] {msg}")
+
+    def save_debug_file():
+        try:
+            with open('verifix_debug.log', 'w', encoding='utf-8') as f:
+                f.write("\n".join(debug_logs))
+        except Exception as ex:
+            print(f"Failed writing debug log: {ex}")
+
+    log_debug(f"Starting Verifix Sync. URL: {verifix_url}, Login: {verifix_login}, Month: {year_month}")
     
     try:
         year, month = map(int, year_month.split('-'))
     except:
+        log_debug("Invalid month format")
+        save_debug_file()
         return None, "Неверный формат месяца/года"
         
     _, num_days = calendar.monthrange(year, month)
     begin_date = f"01.{month:02d}.{year}"
     end_date = f"{num_days:02d}.{month:02d}.{year}"
+    
+    log_debug(f"Date range: {begin_date} to {end_date}")
     
     sha1_pwd = hashlib.sha1(verifix_password.encode('utf-8')).hexdigest()
     
@@ -596,115 +616,121 @@ def run_verifix_sync(verifix_url, verifix_login, verifix_password, year_month):
         }
     )
     
+    log_debug(f"Sending login request to: {login_url}")
     try:
         with opener.open(req, timeout=10) as resp:
             resp_body = resp.read().decode('utf-8')
             try:
                 res_json = json.loads(resp_body)
-            except:
+            except Exception as json_err:
+                log_debug(f"Failed to parse login response JSON: {json_err}")
+                save_debug_file()
                 return None, f"Ответ сервера Verifix не является JSON. Ответ: {resp_body[:200]}"
                 
             if res_json.get('status') != 'logged_in':
                 err_msg = res_json.get('error') or res_json.get('message') or "Неверный логин или пароль"
+                log_debug(f"Login rejected: {err_msg}")
+                save_debug_file()
                 return None, f"Ошибка авторизации Verifix: {err_msg}"
+            
+            log_debug("Login successful!")
     except urllib.error.HTTPError as he:
         try:
             err_body = he.read().decode('utf-8')
+            log_debug(f"Login HTTP Error {he.code}: {err_body[:1000]}")
             err_json = json.loads(err_body)
             err_msg = err_json.get('error') or err_json.get('message') or str(he)
         except:
             err_msg = str(he)
+        save_debug_file()
         return None, f"Ошибка HTTP при авторизации: {err_msg}"
     except Exception as e:
+        log_debug(f"Login failed connection exception: {e}")
+        save_debug_file()
         return None, f"Не удалось подключиться к Verifix: {str(e)}"
         
-    forms_to_try = [
-        'vhr/staff/track_list',
-        'vhr/attendance/track_list',
-        'vhr/staff/timesheet',
-        'vhr/attendance/attendance_list'
-    ]
+    updated_days = {}
     
-    extracted_records = []
-    success_form = None
-    response_sample = ""
-    
-    for form_name in forms_to_try:
-        grid_url = f"{verifix_url.rstrip('/')}/b/biruni/t$grid"
-        grid_params = {
-            '_form': form_name,
-            'begin_date': begin_date,
-            'end_date': end_date
-        }
-        grid_data = urllib.parse.urlencode(grid_params).encode('utf-8')
+    log_debug("Querying daily dashboard table data...")
+    for day in range(1, num_days + 1):
+        date_str = f"{day:02d}.{month:02d}.{year}"
         
-        grid_req = urllib.request.Request(
-            grid_url,
-            data=grid_data,
+        payload = {
+            "p": {
+                "column": ["name", "input_time", "output_time", "begin_time", "kind_name"],
+                "filter": [],
+                "sort": ["name"],
+                "offset": 0,
+                "limit": 50
+            },
+            "d": {
+                "division_id": [],
+                "job_id": [],
+                "schedule_id": [],
+                "rank_id": [],
+                "location_id": [],
+                "fte_id": [],
+                "date": date_str
+            }
+        }
+        
+        url = f"{verifix_url.rstrip('/')}/b/vhr/intro/dashboard:table"
+        req_data = json.dumps(payload).encode('utf-8')
+        
+        req = urllib.request.Request(
+            url,
+            data=req_data,
             headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Content-Type': 'application/json; charset=UTF-8',
                 'X-Requested-With': 'XMLHttpRequest'
             }
         )
         
         try:
-            with opener.open(grid_req, timeout=10) as resp:
+            with opener.open(req, timeout=10) as resp:
                 resp_body = resp.read().decode('utf-8')
-                response_sample = resp_body[:200]
-                try:
-                    res_json = json.loads(resp_body)
-                except:
+                res_json = json.loads(resp_body)
+                
+                rows = res_json.get("data", [])
+                if not rows:
+                    log_debug(f"No records for {date_str}")
                     continue
-                
-                records = extract_time_records_from_json(res_json)
-                if records:
-                    extracted_records = records
-                    success_form = form_name
-                    break
-        except Exception as e:
-            print(f"Failed querying form {form_name}: {e}")
-            continue
-            
-    if not extracted_records:
-        for form_name in forms_to_try:
-            load_url = f"{verifix_url.rstrip('/')}/b/biruni/m$load"
-            load_params = {
-                '_form': form_name,
-                'begin_date': begin_date,
-                'end_date': end_date
-            }
-            load_data = urllib.parse.urlencode(load_params).encode('utf-8')
-            
-            load_req = urllib.request.Request(
-                load_url,
-                data=load_data,
-                headers={
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            )
-            
-            try:
-                with opener.open(load_req, timeout=10) as resp:
-                    resp_body = resp.read().decode('utf-8')
-                    try:
-                        res_json = json.loads(resp_body)
-                    except:
-                        continue
                     
-                    records = extract_time_records_from_json(res_json)
-                    if records:
-                        extracted_records = records
-                        success_form = form_name
-                        break
-            except Exception as e:
-                print(f"Failed loading form {form_name}: {e}")
-                continue
-                
-    if not extracted_records:
-        return None, f"Авторизовано успешно, но не удалось найти данные посещаемости за период {begin_date} - {end_date} в Verifix. Ответ сервера: {response_sample}"
+                # Find matching row for user
+                matched_row = None
+                if len(rows) == 1:
+                    matched_row = rows[0]
+                else:
+                    # Filter by name similarity
+                    login_parts = re.split(r'[^a-zA-Z0-9]', verifix_login.split('@')[0].lower())
+                    login_parts = [p for p in login_parts if len(p) > 2]
+                    for row in rows:
+                        row_name = row[0].lower()
+                        if all(p in row_name for p in login_parts):
+                            matched_row = row
+                            break
+                            
+                if matched_row:
+                    name, input_time, output_time, begin_time, kind_name = matched_row
+                    log_debug(f"Matched row for {date_str}: {name}, in: {input_time}, out: {output_time}")
+                    
+                    keldi = input_time if input_time else ""
+                    ketdi = output_time if output_time else ""
+                    
+                    if keldi or ketdi:
+                        updated_days[str(day)] = {
+                            "keldi": keldi,
+                            "ketdi": ketdi
+                        }
+                else:
+                    log_debug(f"Could not match user row on {date_str} from {len(rows)} rows.")
+        except Exception as e:
+            log_debug(f"Error querying dashboard table on {date_str}: {e}")
+            
+    save_debug_file()
+    if not updated_days:
+        return None, f"Авторизовано успешно, но не удалось найти данные посещаемости за период {begin_date} - {end_date} в Verifix."
         
     date_pat = re.compile(r'^(\d{2})\.(\d{2})\.(\d{4})$') # DD.MM.YYYY
     date_iso_pat = re.compile(r'^(\d{4})-(\d{2})-(\d{2})$') # YYYY-MM-DD
