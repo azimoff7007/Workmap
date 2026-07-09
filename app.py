@@ -203,13 +203,15 @@ def get_default_month_data(year_month, username):
     days = {}
     _, num_days = calendar.monthrange(year, month)
     
+    is_old_schedule = (year < 2026) or (year == 2026 and month < 7)
+    
     for day in range(1, num_days + 1):
         date_obj = datetime.date(year, month, day)
         wday = date_obj.weekday() # 0-6 (0=Monday)
         
-        # Mon-Fri: 9h, Sat: 8h (since Saturday is short), Sun: 0h
+        # Mon-Fri: 10h (before July 2026) or 9h (July 2026 onwards), Sat: 8h, Sun: 0h
         if wday < 5:
-            plan = 9.0
+            plan = 10.0 if is_old_schedule else 9.0
         elif wday == 5:
             plan = 8.0 # Saturday plan
         else:
@@ -638,12 +640,15 @@ def run_verifix_sync(verifix_url, verifix_login, verifix_password, year_month):
         try:
             err_body = he.read().decode('utf-8')
             log_debug(f"Login HTTP Error {he.code}: {err_body[:1000]}")
-            err_json = json.loads(err_body)
-            err_msg = err_json.get('error') or err_json.get('message') or str(he)
-        except:
+            try:
+                err_json = json.loads(err_body)
+                err_msg = err_json.get('error') or err_json.get('message') or err_body or str(he)
+            except:
+                err_msg = err_body if err_body.strip() else str(he)
+        except Exception as parse_err:
             err_msg = str(he)
         save_debug_file()
-        return None, f"Ошибка HTTP при авторизации: {err_msg}"
+        return None, f"Ошибка авторизации Verifix: {err_msg}"
     except Exception as e:
         log_debug(f"Login failed connection exception: {e}")
         save_debug_file()
