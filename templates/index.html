@@ -880,6 +880,37 @@
       
       <!-- Action Menu List -->
       <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px;">
+        <!-- Verifix Integration Accordion Trigger -->
+        <div id="verifixSettingsTrigger" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); cursor: pointer; transition: background 0.2s; user-select: none; margin-bottom: 4px;">
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--txt);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Интеграция с Verifix
+          </div>
+          <svg id="verifixSettingsChevron" style="transform: rotate(0deg); transition: transform 0.2s; color: var(--muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        
+        <!-- Verifix Fields Container (Hidden by default) -->
+        <div id="verifixFieldsContainer" style="max-height: 0; overflow: hidden; transition: all 0.3s ease-out; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; background: transparent;">
+          <div style="height: 4px;"></div>
+          <!-- Verifix URL Field -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Адрес Verifix (URL)</label>
+            <input type="url" id="settingsVerifixUrl" placeholder="https://app.verifix.com" value="https://app.verifix.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 13px;">
+          </div>
+          
+          <!-- Verifix Login Field -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Логин (например, user@company)</label>
+            <input type="text" id="settingsVerifixLogin" placeholder="username@company" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 13px;">
+          </div>
+          
+          <!-- Verifix Password Field -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block;">Пароль</label>
+            <input type="password" id="settingsVerifixPassword" placeholder="Оставьте пустым, чтобы не менять" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-input); color: var(--txt); outline: none; font-family: inherit; font-size: 13px;">
+          </div>
+        </div>
+
         <!-- Change Password Accordion Trigger -->
         <div id="changePasswordTrigger" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); cursor: pointer; transition: background 0.2s; user-select: none;">
           <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--txt);">
@@ -1165,6 +1196,10 @@
         <div class="panel-title">
           <span id="timesheetTitle" data-i18n="timesheetTitle">Табель учета времени</span>
           <div class="table-actions-header">
+            <button class="btn btn-success" id="verifixSyncBtn" style="padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="verifixSyncIcon"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>Импорт из Verifix</span>
+            </button>
             <button class="btn btn-secondary" id="fillWeekdaysBtn" style="padding: 6px 12px; font-size: 12px;">Заполнить будни (09:00 - 18:00)</button>
             <button class="btn btn-secondary" id="fillSaturdaysBtn" style="padding: 6px 12px; font-size: 12px;">Заполнить субботы (09:00 - 17:00)</button>
             <button class="btn btn-secondary" id="clearAllBtn" style="padding: 6px 12px; font-size: 12px;">Удалить все заполненные</button>
@@ -1471,6 +1506,16 @@
             if (data.username) {
               currentUser = data.username;
               updateAvatarText(currentUser, data.avatar || null);
+              
+              // Load Verifix settings
+              document.getElementById('settingsVerifixUrl').value = data.verifix_url || 'https://app.verifix.com';
+              document.getElementById('settingsVerifixLogin').value = data.verifix_login || '';
+              if (data.verifix_has_password) {
+                document.getElementById('settingsVerifixPassword').placeholder = '•••••••• (Сохранен)';
+              } else {
+                document.getElementById('settingsVerifixPassword').placeholder = 'Введите пароль';
+              }
+              
               loginOverlay.style.display = 'none';
               return true;
             }
@@ -1536,6 +1581,10 @@
         const newPassword = settingsNewPassword.value;
         const confirmPassword = settingsConfirmPassword.value;
         
+        const verifixUrl = document.getElementById('settingsVerifixUrl').value.trim();
+        const verifixLogin = document.getElementById('settingsVerifixLogin').value.trim();
+        const verifixPassword = document.getElementById('settingsVerifixPassword').value;
+        
         if (newPassword && newPassword !== confirmPassword) {
           settingsError.textContent = "Новые пароли не совпадают!";
           return;
@@ -1553,22 +1602,33 @@
         
         settingsError.textContent = "";
         try {
+          const payload = {
+            new_username: newUsername,
+            current_password: currentPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword,
+            avatar: currentAvatarBase64,
+            verifix_url: verifixUrl,
+            verifix_login: verifixLogin
+          };
+          if (verifixPassword && verifixPassword !== '') {
+            payload.verifix_password = verifixPassword;
+          }
+          
           const res = await fetch('/api/update-profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              new_username: newUsername,
-              current_password: currentPassword,
-              new_password: newPassword,
-              confirm_password: confirmPassword,
-              avatar: currentAvatarBase64
-            })
+            body: JSON.stringify(payload)
           });
           const data = await res.json();
           if (res.ok && data.success) {
             currentUser = data.username;
             updateAvatarText(currentUser, data.avatar || null);
             initialAvatarBase64 = data.avatar || null;
+            
+            // Reload user info to refresh fields placeholders
+            checkAuth();
+            
             settingsOverlay.style.display = 'none';
             showToast("Профиль успешно обновлен!");
             
@@ -1576,6 +1636,7 @@
             settingsCurrentPassword.value = "";
             settingsNewPassword.value = "";
             settingsConfirmPassword.value = "";
+            document.getElementById('settingsVerifixPassword').value = "";
             
             applyLanguage();
           } else {
@@ -1621,6 +1682,12 @@
         isPasswordExpanded = false;
         passwordFieldsContainer.style.maxHeight = "0";
         changePasswordChevron.style.transform = "rotate(0deg)";
+        
+        // Reset Verifix accordion
+        isVerifixExpanded = false;
+        verifixFieldsContainer.style.maxHeight = "0";
+        verifixSettingsChevron.style.transform = "rotate(0deg)";
+        document.getElementById('settingsVerifixPassword').value = '';
         
         settingsOverlay.style.display = 'flex';
         settingsUsernameInput.focus();
@@ -1692,6 +1759,70 @@
       document.getElementById('fillWeekdaysBtn').addEventListener('click', () => fillStandardTimes('weekday', '09:00', '18:00'));
       document.getElementById('fillSaturdaysBtn').addEventListener('click', () => fillStandardTimes('saturday', '09:00', '17:00'));
       document.getElementById('clearAllBtn').addEventListener('click', clearAllTimes);
+      
+      // Verifix Sync Listener
+      const verifixSyncBtn = document.getElementById('verifixSyncBtn');
+      if (verifixSyncBtn) {
+        verifixSyncBtn.addEventListener('click', async () => {
+          const ym = `${yearSelect.value}-${monthSelect.value}`;
+          const verifixSyncIcon = document.getElementById('verifixSyncIcon');
+          
+          verifixSyncBtn.disabled = true;
+          verifixSyncBtn.style.opacity = '0.7';
+          if (verifixSyncIcon) {
+            verifixSyncIcon.style.animation = 'spin 1s linear infinite';
+          }
+          
+          if (!document.getElementById('spinAnimation')) {
+            const style = document.createElement('style');
+            style.id = 'spinAnimation';
+            style.innerHTML = `@keyframes spin { 100% { transform: rotate(360deg); } }`;
+            document.head.appendChild(style);
+          }
+          
+          try {
+            const res = await fetch('/api/verifix/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ year_month: ym })
+            });
+            const data = await res.json();
+            
+            if (res.ok && data.success) {
+              showToast(data.message);
+              await loadMonthData();
+            } else {
+              showToast(data.message || data.error || "Ошибка синхронизации с Verifix");
+            }
+          } catch (err) {
+            console.error("Verifix sync failed", err);
+            showToast("Сетевая ошибка при синхронизации!");
+          } finally {
+            verifixSyncBtn.disabled = false;
+            verifixSyncBtn.style.opacity = '1';
+            if (verifixSyncIcon) {
+              verifixSyncIcon.style.animation = 'none';
+            }
+          }
+        });
+      }
+      
+      // Verifix Accordion Listeners
+      let isVerifixExpanded = false;
+      const verifixSettingsTrigger = document.getElementById('verifixSettingsTrigger');
+      const verifixSettingsChevron = document.getElementById('verifixSettingsChevron');
+      const verifixFieldsContainer = document.getElementById('verifixFieldsContainer');
+      
+      verifixSettingsTrigger.addEventListener('click', () => {
+        isVerifixExpanded = !isVerifixExpanded;
+        if (isVerifixExpanded) {
+          verifixFieldsContainer.style.maxHeight = verifixFieldsContainer.scrollHeight + "px";
+          verifixSettingsChevron.style.transform = "rotate(180deg)";
+        } else {
+          verifixFieldsContainer.style.maxHeight = "0";
+          verifixSettingsChevron.style.transform = "rotate(0deg)";
+        }
+      });
       
       // Collapsible History Listener
       const historyHeader = document.getElementById('historyHeader');
