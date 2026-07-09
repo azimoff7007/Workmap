@@ -1115,6 +1115,13 @@
               </div>
             </div>
             
+            <!-- Final Salary Received Card -->
+            <div id="finalSalaryCard" style="background: linear-gradient(135deg, rgba(46, 213, 115, 0.12), rgba(46, 213, 115, 0.04)); border: 1px solid rgba(46, 213, 115, 0.25); border-radius: 12px; padding: 14px; margin-top: 16px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+              <div style="font-size: 11px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;" data-i18n="finalSalaryTitle">Конечная зарплата (Остаток)</div>
+              <div id="finalSalaryVal" style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 800; color: #a3d179; text-shadow: 0 0 10px rgba(163,209,121,0.2);">0 UZS</div>
+              <div style="font-size: 10.5px; color: var(--muted); margin-top: 6px;" data-i18n="finalSalarySub">Карта + Наличные (без аванса)</div>
+            </div>
+            
             <!-- Interactive Formula Breakdown -->
             <div class="calc-explain" id="formulaBreakdown">
               <h4 data-i18n="breakdownTitle">Детализация расчета:</h4>
@@ -1379,7 +1386,9 @@
         breakdownInUzs: "В сумах",
         breakdownMinusAvans: "Аванс",
         breakdownMinusCard: "На карту",
-        breakdownRemainingCash: "Остаток наличными"
+        breakdownRemainingCash: "Остаток наличными",
+        finalSalaryTitle: "Конечная зарплата (Остаток)",
+        finalSalarySub: "Карта + Наличные (без аванса)"
       },
       uz: {
         brandTag: "WorkMap Ish Grafigi",
@@ -1440,7 +1449,9 @@
         breakdownInUzs: "So'mda",
         breakdownMinusAvans: "Avans",
         breakdownMinusCard: "Kartaga",
-        breakdownRemainingCash: "Naqd pul qoldig'i"
+        breakdownRemainingCash: "Naqd pul qoldig'i",
+        finalSalaryTitle: "Yakuniy maosh (Qoldiq)",
+        finalSalarySub: "Karta + Naqd pul (avanssiz)"
       }
     };
     
@@ -2396,6 +2407,12 @@
       const ratePerHour = totalPlan > 0 ? (salary + bonus + unplannedBonus) / totalPlan : 0;
       const totalUZS = finalUSD * kurs;
       const remainingUZS = totalUZS - avans - cardTransfer;
+      
+      const netPayout = totalUZS - avans;
+      const finalSalaryVal = document.getElementById('finalSalaryVal');
+      if (finalSalaryVal) {
+        finalSalaryVal.textContent = `${Math.round(netPayout).toLocaleString()} ${sumTxt}`;
+      }
       
       const lang = langSelect.value;
       const t = TRANSLATIONS[lang];
