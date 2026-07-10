@@ -12,6 +12,7 @@ app.secret_key = 'workmap_secure_session_key_secret_987654321'
 
 DB_FILE = 'schedule_db.json'
 USERS_FILE = 'users_db.json'
+EXCEL_FILE = 'Azimoff.xlsx'
 
 def format_time(t):
     if t is None:
@@ -508,7 +509,7 @@ def get_history():
         
         final_usd = 0.0
         if total_plan > 0:
-            final_usd = (salary + bonus + unplanned_bonus) / total_plan * total_actual
+            final_usd = (salary / total_plan * total_actual) + bonus + unplanned_bonus
             
         total_uzs = final_usd * kurs
         remaining_cash = total_uzs - avans - card_transfer
