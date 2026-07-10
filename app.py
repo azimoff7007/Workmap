@@ -1,4 +1,8 @@
 import os
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 import json
 import datetime
 import calendar
@@ -12,6 +16,7 @@ app.secret_key = 'workmap_secure_session_key_secret_987654321'
 
 DB_FILE = 'schedule_db.json'
 USERS_FILE = 'users_db.json'
+EXCEL_FILE = 'Azimoff.xlsx'
 
 def format_time(t):
     if t is None:
@@ -58,7 +63,52 @@ def get_usd_uzs_rate():
         
     return 12050.0 # fallback rate
 
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+def get_db_connection():
+    if DATABASE_URL:
+        try:
+            return psycopg2.connect(DATABASE_URL)
+        except Exception as e:
+            print(f"Error connecting to PostgreSQL: {e}")
+    return None
+
+def init_db():
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS json_storage (
+                        key VARCHAR(50) PRIMARY KEY,
+                        data JSONB
+                    );
+                """)
+                conn.commit()
+                print("PostgreSQL json_storage table initialized successfully.")
+        except Exception as e:
+            print(f"Error initializing database: {e}")
+        finally:
+            conn.close()
+
+# Run init_db on startup
+init_db()
+
 def read_users():
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT data FROM json_storage WHERE key = 'users_db';")
+                row = cur.fetchone()
+                if row:
+                    return row[0]
+        except Exception as e:
+            print(f"Error reading users from PostgreSQL: {e}")
+        finally:
+            conn.close()
+        return {}
+        
     if not os.path.exists(USERS_FILE):
         return {}
     try:
@@ -68,10 +118,44 @@ def read_users():
         return {}
 
 def write_users(users):
-    with open(USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, indent=2, ensure_ascii=False)
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO json_storage (key, data)
+                    VALUES ('users_db', %s::jsonb)
+                    ON CONFLICT (key)
+                    DO UPDATE SET data = EXCLUDED.data;
+                """, (json.dumps(users),))
+                conn.commit()
+        except Exception as e:
+            print(f"Error writing users to PostgreSQL: {e}")
+        finally:
+            conn.close()
+        return
+        
+    try:
+        with open(USERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(users, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Error writing users: {e}")
 
 def read_db():
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT data FROM json_storage WHERE key = 'schedule_db';")
+                row = cur.fetchone()
+                if row:
+                    return row[0]
+        except Exception as e:
+            print(f"Error reading schedule from PostgreSQL: {e}")
+        finally:
+            conn.close()
+        return {}
+        
     if not os.path.exists(DB_FILE):
         return {}
     try:
@@ -81,8 +165,28 @@ def read_db():
         return {}
 
 def write_db(data):
-    with open(DB_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO json_storage (key, data)
+                    VALUES ('schedule_db', %s::jsonb)
+                    ON CONFLICT (key)
+                    DO UPDATE SET data = EXCLUDED.data;
+                """, (json.dumps(data),))
+                conn.commit()
+        except Exception as e:
+            print(f"Error writing schedule to PostgreSQL: {e}")
+        finally:
+            conn.close()
+        return
+        
+    try:
+        with open(DB_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Error writing DB: {e}")
 
 def get_user_data(username):
     db = read_db()
