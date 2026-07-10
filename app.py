@@ -12,7 +12,6 @@ app.secret_key = 'workmap_secure_session_key_secret_987654321'
 
 DB_FILE = 'schedule_db.json'
 USERS_FILE = 'users_db.json'
-EXCEL_FILE = 'Azimoff.xlsx'
 
 def format_time(t):
     if t is None:
