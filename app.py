@@ -63,14 +63,31 @@ def get_usd_uzs_rate():
     return 12050.0 # fallback rate
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
+db_pool = None
+
+if DATABASE_URL and psycopg2:
+    try:
+        from psycopg2.pool import ThreadedConnectionPool
+        # Maintain min 1 and max 15 database connections
+        db_pool = ThreadedConnectionPool(1, 15, DATABASE_URL)
+        print("PostgreSQL ThreadedConnectionPool initialized successfully.")
+    except Exception as e:
+        print(f"Error initializing PostgreSQL connection pool: {e}")
 
 def get_db_connection():
-    if DATABASE_URL:
+    if db_pool:
         try:
-            return psycopg2.connect(DATABASE_URL)
+            return db_pool.getconn()
         except Exception as e:
-            print(f"Error connecting to PostgreSQL: {e}")
+            print(f"Error getting connection from pool: {e}")
     return None
+
+def release_db_connection(conn):
+    if db_pool and conn:
+        try:
+            db_pool.putconn(conn)
+        except Exception as e:
+            print(f"Error releasing connection to pool: {e}")
 
 def init_db():
     conn = get_db_connection()
@@ -88,7 +105,7 @@ def init_db():
         except Exception as e:
             print(f"Error initializing database: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
 
 # Run init_db on startup
 init_db()
@@ -105,7 +122,7 @@ def read_users():
         except Exception as e:
             print(f"Error reading users from PostgreSQL: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
         return {}
         
     if not os.path.exists(USERS_FILE):
@@ -131,7 +148,7 @@ def write_users(users):
         except Exception as e:
             print(f"Error writing users to PostgreSQL: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
         return
         
     try:
@@ -152,7 +169,7 @@ def read_db():
         except Exception as e:
             print(f"Error reading schedule from PostgreSQL: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
         return {}
         
     if not os.path.exists(DB_FILE):
@@ -178,7 +195,7 @@ def write_db(data):
         except Exception as e:
             print(f"Error writing schedule to PostgreSQL: {e}")
         finally:
-            conn.close()
+            release_db_connection(conn)
         return
         
     try:
@@ -423,6 +440,9 @@ def update_profile():
     # Apply changes
     target_username = current_user
     user_info = users.get(current_user)
+    if not user_info:
+        return jsonify({"success": False, "message": "Сессия устарела. Пожалуйста, войдите в аккаунт заново."}), 401
+
     if not isinstance(user_info, dict):
         user_info = {
             "password": user_info,
