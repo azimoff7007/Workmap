@@ -2399,12 +2399,9 @@
       const avans = currentData.avans;
       const cardTransfer = currentData.card_transfer || 0;
       
-      let finalUSD = 0.0;
-      if (totalPlan > 0) {
-        finalUSD = (salary + bonus + unplannedBonus) / totalPlan * totalActual;
-      }
-      
-      const ratePerHour = totalPlan > 0 ? (salary + bonus + unplannedBonus) / totalPlan : 0;
+      const ratePerHour = totalPlan > 0 ? salary / totalPlan : 0;
+      const accruedBase = ratePerHour * totalActual;
+      const finalUSD = accruedBase + bonus + unplannedBonus;
       const totalUZS = finalUSD * kurs;
       const remainingUZS = totalUZS - avans - cardTransfer;
       
@@ -2422,9 +2419,9 @@
       }
       
       const breakdownHtml = `
-        <p><strong>${t.breakdownBase}:</strong> ${salary.toFixed(2)} + ${bonus.toFixed(2)} (${bonusTxt}) + ${unplannedBonus.toFixed(2)} (${unplannedBonusTxt}) = ${(salary+bonus+unplannedBonus).toFixed(2)} $</p>
-        <p><strong>${t.breakdownRate}:</strong> ${(salary+bonus+unplannedBonus).toFixed(2)} / ${totalPlan.toFixed(1)} ${hoursTxt} = <span>$${ratePerHour.toFixed(4)} / ${hoursTxt}</span></p>
-        <p><strong>${t.breakdownAccrued}:</strong> $${ratePerHour.toFixed(4)} * ${totalActual.toFixed(2)} ${hoursTxt} = <span>$${finalUSD.toFixed(2)}</span></p>
+        <p><strong>${t.breakdownRate}:</strong> ${salary.toFixed(2)} / ${totalPlan.toFixed(1)} ${hoursTxt} = <span>$${ratePerHour.toFixed(4)} / ${hoursTxt}</span></p>
+        <p><strong>${t.breakdownAccrued} (Base):</strong> $${ratePerHour.toFixed(4)} * ${totalActual.toFixed(2)} ${hoursTxt} = <span>$${accruedBase.toFixed(2)}</span></p>
+        <p><strong>${t.breakdownBase} (Total $):</strong> $${accruedBase.toFixed(2)} + ${bonus.toFixed(2)} (${bonusTxt}) + ${unplannedBonus.toFixed(2)} (${unplannedBonusTxt}) = <span>$${finalUSD.toFixed(2)}</span></p>
         <p><strong>${t.breakdownInUzs}:</strong> $${finalUSD.toFixed(2)} * ${kurs} = <span>${Math.round(totalUZS).toLocaleString()} ${sumTxt}</span></p>
         <p><strong>${t.breakdownMinusAvans}:</strong> -${avans.toLocaleString()} ${sumTxt}</p>
         <p><strong>${t.breakdownMinusCard}:</strong> -${cardTransfer.toLocaleString()} ${sumTxt}</p>
