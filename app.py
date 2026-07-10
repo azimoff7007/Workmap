@@ -16,7 +16,6 @@ app.secret_key = 'workmap_secure_session_key_secret_987654321'
 
 DB_FILE = 'schedule_db.json'
 USERS_FILE = 'users_db.json'
-EXCEL_FILE = 'Azimoff.xlsx'
 
 def format_time(t):
     if t is None:
@@ -239,62 +238,6 @@ def migrate_users_format():
             print("Users database format successfully migrated to dictionary layout.")
     except Exception as e:
         print(f"Error migrating users format: {e}")
-
-def migrate_excel():
-    # If users or database exists, skip Excel migration
-    if os.path.exists(DB_FILE) or os.path.exists(USERS_FILE):
-        return
-    
-    if not os.path.exists(EXCEL_FILE):
-        return
-
-    print("Migrating Azimoff.xlsx...")
-    db = {}
-    try:
-        import openpyxl
-        wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True)
-        # Import 'Aprel N' as '2024-04'
-        if 'Aprel N' in wb.sheetnames:
-            sheet = wb['Aprel N']
-            days = {}
-            for r in range(5, 36):
-                day_val = sheet.cell(r, 1).value
-                if day_val is None:
-                    continue
-                day_num = int(float(day_val))
-                keldi = format_time(sheet.cell(r, 3).value)
-                ketdi = format_time(sheet.cell(r, 4).value)
-                plan = sheet.cell(r, 5).value or 0
-                days[str(day_num)] = {
-                    "keldi": keldi,
-                    "ketdi": ketdi,
-                    "plan": plan
-                }
-            
-            salary = sheet.cell(43, 4).value or 700.0
-            bonus = sheet.cell(44, 4).value or 300.0
-            kurs = sheet.cell(51, 4).value or 12050.0
-            avans = sheet.cell(48, 4).value or 1200000.0
-            
-            db["2024-04"] = {
-                "days": days,
-                "salary": salary,
-                "bonus": bonus,
-                "kurs": kurs,
-                "avans": avans,
-                "calc_method": "proportional"
-            }
-            print("Successfully migrated 'Aprel N' to '2024-04'")
-            
-    except Exception as e:
-        print(f"Error during Excel migration: {e}")
-    
-    # Store migrated data under default user 'azimoff'
-    if db:
-        write_user_data("azimoff", db)
-        users = read_users()
-        users["azimoff"] = hash_password("azimoff")
-        write_users(users)
 
 def get_default_month_data(year_month, username):
     current_live_rate = get_usd_uzs_rate()
@@ -904,7 +847,6 @@ def open_browser():
 if __name__ == '__main__':
     migrate_db_format()
     migrate_users_format()
-    migrate_excel()
     
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true" and os.environ.get("FLASK_ENV") != "production":
         threading.Timer(1.2, open_browser).start()
