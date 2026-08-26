@@ -2361,11 +2361,11 @@
       }
       
       // Calculate Debt (underworked hours on past or present days)
-      const isPastOrPresent = (year < currentYear) || 
-                              (year === currentYear && month < currentMonth) || 
-                              (year === currentYear && month === currentMonth && dayNum <= currentDay);
+      const isPast = (year < currentYear) || 
+                     (year === currentYear && month < currentMonth) || 
+                     (year === currentYear && month === currentMonth && dayNum < currentDay);
                               
-      if (isPastOrPresent) {
+      if (isPast) {
         if (worked < dObj.plan) {
           totalDebt += (dObj.plan - worked);
         }
