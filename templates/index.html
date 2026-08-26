@@ -2380,12 +2380,13 @@
       kpiPlan.textContent = totalPlan.toFixed(2);
       kpiActual.textContent = totalActual.toFixed(2);
       
-      if (totalOvertime > 0.01) {
-        kpiBalance.textContent = `+${totalOvertime.toFixed(2)}`;
+      const balanceVal = totalExtra - totalDebt;
+      if (balanceVal > 0.01) {
+        kpiBalance.textContent = `+${balanceVal.toFixed(2)}`;
         kpiBalanceCard.style.setProperty('--accent-color', 'var(--teal)');
         kpiBalance.className = 'k-val plus';
-      } else if (totalOvertime < -0.01) {
-        kpiBalance.textContent = `${totalOvertime.toFixed(2)}`;
+      } else if (balanceVal < -0.01) {
+        kpiBalance.textContent = `${balanceVal.toFixed(2)}`;
         kpiBalanceCard.style.setProperty('--accent-color', 'var(--rose)');
         kpiBalance.className = 'k-val minus';
       } else {
