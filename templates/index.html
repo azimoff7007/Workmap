@@ -2289,17 +2289,25 @@
       const isSaturday = (wday === 6);
       
       let limitTime = "09:00";
+      let departureLimit = "18:00";
       if (isSaturday) {
         limitTime = "09:00";
+        departureLimit = "17:00";
       } else if (isSunday) {
         limitTime = "00:00";
+        departureLimit = "00:00";
       } else {
         limitTime = isOldScheduleActive() ? "08:00" : "09:00";
+        departureLimit = "18:00";
       }
       
       if (plan > 0) {
         if (keldi && ketdi) {
-          if (keldi <= limitTime) {
+          const hasLateArrival = keldi > limitTime;
+          const hasEarlyDeparture = ketdi < departureLimit;
+          const hasUndertime = worked < plan;
+          
+          if (!hasLateArrival && !hasEarlyDeparture && !hasUndertime) {
             badgeStatus = 'ontime';
           } else {
             badgeStatus = 'late';
@@ -2746,17 +2754,34 @@
                                   (year === currentYear && month === currentMonth && d <= currentDay);
           
           let limitTime = "09:00";
+          let departureLimit = "18:00";
           if (isSaturday) {
             limitTime = "09:00";
+            departureLimit = "17:00";
           } else if (isSunday) {
             limitTime = "00:00";
+            departureLimit = "00:00";
           } else {
             limitTime = isOldScheduleActive() ? "08:00" : "09:00";
+            departureLimit = "18:00";
+          }
+          
+          let worked = 0.0;
+          if (keldi && ketdi) {
+            const [aH, aM] = keldi.split(':').map(Number);
+            const [dH, dM] = ketdi.split(':').map(Number);
+            const aMin = aH * 60 + aM;
+            const dMin = dH * 60 + dM;
+            if (dMin > aMin) worked = (dMin - aMin) / 60;
           }
           
           if (plan > 0) {
             if (keldi && ketdi) {
-              if (keldi <= limitTime) {
+              const hasLateArrival = keldi > limitTime;
+              const hasEarlyDeparture = ketdi < departureLimit;
+              const hasUndertime = worked < plan;
+              
+              if (!hasLateArrival && !hasEarlyDeparture && !hasUndertime) {
                 status = 'ontime';
               } else {
                 status = 'late';
@@ -2771,11 +2796,7 @@
           } else {
             // Day off (plan === 0)
             if (keldi && ketdi) {
-              if (keldi <= limitTime) {
-                status = 'ontime';
-              } else {
-                status = 'late';
-              }
+              status = 'ontime'; // worked on off day
             } else {
               status = 'weekend-off';
             }
